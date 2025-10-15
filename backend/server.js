@@ -90,10 +90,16 @@ app.get('/api/leads-list', (req, res) => {
   }catch(e){ res.status(500).send('error'); }
 });
 
-// Serve frontend for other routes (SPA fallback)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
+// ✅ Admin login route
+app.post('/api/admin-login', (req, res) => {
+  const { password } = req.body;
+  if (password === process.env.ADMIN_PASSWORD) {
+    return res.json({ ok: true });
+  } else {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
 });
+
 
 app.listen(PORT, () => {
   console.log('TaskFlow MVP v2 listening on port', PORT);
