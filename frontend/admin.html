@@ -1,57 +1,172 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TaskFlow Admin — Leads</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow Admin Dashboard</title>
   <style>
-    body{font-family:Inter,system-ui,Arial;padding:20px;background:#f4f6f8}
-    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-    .card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 8px 30px rgba(12,18,30,0.05)}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
-    th{background:#fafafa;font-weight:600}
-    .tag{padding:6px 8px;border-radius:8px;background:#eef9f2;color:#065f3b;font-weight:700;font-size:12px}
-    .controls{display:flex;gap:8px}
-    button{padding:8px 12px;border-radius:8px;border:0;background:#0b74de;color:#fff;font-weight:600;cursor:pointer}
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 30px;
+      color: #111;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 800px;
+      margin: 0 auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border-bottom: 1px solid #eee;
+      padding: 10px 6px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #f9fafc;
+      font-weight: 600;
+    }
+    input, button {
+      font-size: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      margin-top: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #0b74de;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #095fbd; }
+    #loginSection {
+      max-width: 360px;
+      margin: 80px auto;
+      text-align: center;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+    #loginStatus {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <div class="top">
-    <h2>TaskFlow Admin</h2>
-    <div class="controls">
-      <button onclick="fetchLeads()">Refresh</button>
-      <button onclick="downloadJSON()">Download JSON</button>
-    </div>
+
+  <!-- Login Section -->
+  <div id="loginSection">
+    <h2>Admin Login</h2>
+    <input type="password" id="adminPass" placeholder="Enter password">
+    <button id="loginBtn">Login</button>
+    <p id="loginStatus"></p>
   </div>
-  <div class="card">
-    <table id="leadsTable"><thead><tr><th>Name</th><th>Phone</th><th>Service</th><th>When</th><th>Notes</th></tr></thead><tbody></tbody></table>
+
+  <!-- Admin Dashboard -->
+  <div id="adminPanel" style="display:none;">
+    <div class="card">
+      <h1>TaskFlow Admin Dashboard</h1>
+      <button id="refreshBtn">🔄 Refresh</button>
+      <table id="leadsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Service</th>
+            <th>When</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    async function fetchLeads(){
-      try{
-        const res = await fetch('/api/leads-list');
-        const data = await res.json();
-        const tbody = document.querySelector('#leadsTable tbody');
-        tbody.innerHTML = '';
-        data.forEach(l=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${l.name}</td><td>${l.phone}</td><td>${l.service || ''}</td><td>${new Date(l.createdAt).toLocaleString()}</td><td>${l.notes || ''}</td>`;
-          tbody.appendChild(tr);
+    const loginBtn = document.getElementById('loginBtn');
+    const adminPass = document.getElementById('adminPass');
+    const loginStatus = document.getElementById('loginStatus');
+    const loginSection = document.getElementById('loginSection');
+    const adminPanel = document.getElementById('adminPanel');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const leadsTableBody = document.querySelector('#leadsTable tbody');
+
+    const API_BASE = 'https://taskflow-mvp-v2.onrender.com'; // your backend
+
+    // Login logic
+    loginBtn.addEventListener('click', async () => {
+      const password = adminPass.value.trim();
+      if (!password) {
+        loginStatus.textContent = "Please enter a password.";
+        return;
+      }
+      loginStatus.textContent = "Checking...";
+      try {
+        const res = await fetch(`${API_BASE}/api/admin-login`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ password })
         });
-      }catch(err){ console.error(err); alert('Failed loading leads'); }
+        if (res.ok) {
+          loginSection.style.display = 'none';
+          adminPanel.style.display = 'block';
+          loadLeads();
+        } else {
+          loginStatus.textContent = "❌ Wrong password. Try again.";
+        }
+      } catch (e) {
+        loginStatus.textContent = "Network error.";
+      }
+    });
+
+    // Load leads
+    async function loadLeads() {
+      leadsTableBody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+      try {
+        const res = await fetch(`${API_BASE}/api/leads-list`);
+        const data = await res.json();
+        leadsTableBody.innerHTML = "";
+        if (data.length === 0) {
+          leadsTableBody.innerHTML = "<tr><td colspan='5'>No leads yet.</td></tr>";
+          return;
+        }
+        for (const lead of data) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${lead.name}</td>
+            <td>${lead.phone}</td>
+            <td>${lead.service || ''}</td>
+            <td>${lead.preferred || ''}</td>
+            <td>${lead.notes || ''}</td>
+          `;
+          leadsTableBody.appendChild(tr);
+        }
+      } catch (e) {
+        leadsTableBody.innerHTML = "<tr><td colspan='5'>Error loading leads.</td></tr>";
+      }
     }
-    function downloadJSON(){
-      fetch('/api/leads-list').then(r=>r.json()).then(d=>{
-        const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'leads.json'; a.click();
-      });
-    }
-    fetchLeads();
+
+    // Refresh button
+    refreshBtn.addEventListener('click', loadLeads);
   </script>
 </body>
 </html>
