@@ -2,81 +2,127 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TaskFlow — Book a Job</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TaskFlow — Book Your Service</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#f5f7fb;--card:#ffffff;--muted:#6b7280;--primary:#0b74de}
-    *{box-sizing:border-box}
-    body{font-family:Inter,system-ui,Arial;margin:0;padding:40px;background:var(--bg);color:#111}
-    .wrap{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
-    .hero{padding:28px;border-radius:14px;background:linear-gradient(180deg,#fff,#fbfdff);box-shadow:0 8px 30px rgba(15,23,42,0.06)}
-    h1{font-size:22px;margin:0 0 8px}
-    p.lead{margin:0 0 18px;color:var(--muted)}
-    .features{display:flex;gap:10px;flex-wrap:wrap}
-    .feature{background:#fff;padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(12,18,30,0.03);min-width:150px;font-size:13px}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(10,10,20,0.04)}
-    label{display:block;margin:10px 0 6px;font-size:13px;color:#333}
-    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
-    button{margin-top:14px;width:100%;padding:12px;border-radius:10px;border:0;background:var(--primary);color:#fff;font-weight:700;cursor:pointer}
-    .note{font-size:13px;color:var(--muted);margin-top:8px}
-    .small{font-size:12px;color:var(--muted)}
-    .right{position:sticky;top:20px}
-    .pay{background:#0bda73;color:#033;display:inline-block;padding:8px 12px;border-radius:8px;margin-top:8px;text-decoration:none;font-weight:600}
+    :root {
+      --primary: #4f46e5;
+      --bg: #f9fafb;
+      --text: #111827;
+      --muted: #6b7280;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: linear-gradient(135deg, var(--primary), #6366f1);
+      color: white;
+      text-align: center;
+      padding: 60px 20px;
+    }
+    header h1 { font-size: 32px; margin: 0 0 10px; }
+    header p { margin: 0; font-size: 16px; opacity: 0.9; }
+
+    main {
+      max-width: 800px;
+      margin: -40px auto 40px;
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+      padding: 30px;
+    }
+
+    h2 {
+      margin-top: 0;
+      text-align: center;
+      font-size: 22px;
+    }
+
+    form { display: flex; flex-direction: column; gap: 14px; }
+    label { font-weight: 600; font-size: 14px; }
+    input, select, textarea {
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    button:hover { background: #4338ca; }
+
+    .status {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hero card">
-      <h1>TaskFlow — Grow your local business on autopilot</h1>
-      <p class="lead">Get more bookings, reduce no-shows, and collect payments — all from a single dashboard built for local service owners.</p>
-      <div class="features">
-        <div class="feature">Booking Page</div>
-        <div class="feature">SMS + Email Automation</div>
-        <div class="feature">Calendar & Jobs</div>
-        <div class="feature">Payments</div>
-      </div>
+  <header>
+    <h1>TaskFlow</h1>
+    <p>Grow your business on autopilot — Schedule clients effortlessly</p>
+  </header>
 
-      <hr style="margin:18px 0;border:none;border-top:1px solid #f0f3f7">
+  <main>
+    <h2>Book Your Service</h2>
+    <form id="bookingForm">
+      <label for="name">Full Name</label>
+      <input id="name" name="name" placeholder="John Doe" required />
 
-      <h3 style="margin-bottom:8px">How it works</h3>
-      <ol class="small">
-        <li>Customer books through your booking page.</li>
-        <li>TaskFlow sends SMS/email confirmations and reminders.</li>
-        <li>Owner manages jobs + payments from the dashboard.</li>
-      </ol>
-    </div>
+      <label for="phone">Phone Number</label>
+      <input id="phone" name="phone" placeholder="+1..." required />
 
-    <div class="card right">
-      <h3 style="margin:0 0 10px">Request a Booking</h3>
-      <form id="bookingForm">
-        <label for="name">Name</label>
-        <input id="name" name="name" required />
-        <label for="phone">Phone</label>
-        <input id="phone" name="phone" required placeholder="+1..." />
-        <label for="service">Service</label>
-        <select id="service" name="service">
-          <option>House Cleaning</option>
-          <option>Lawn Care</option>
-          <option>Plumbing</option>
-          <option>Painting</option>
-        </select>
-        <label for="date">Preferred date/time</label>
-        <input id="date" name="date" placeholder="e.g. June 10, 3:00 PM" />
-        <label for="notes">Notes (optional)</label>
-        <textarea id="notes" name="notes" rows="3"></textarea>
-        <button type="submit">Request Booking</button>
-        <div class="note" id="status"></div>
-        <a class="pay" id="payLink" href="#" style="display:none">Pay Now (Demo)</a>
-      </form>
-      <p class="small" style="margin-top:12px">Demo payment links are placeholders — payments are handled via Stripe integration in the admin.</p>
-    </div>
-  </div>
+      <label for="service">Select Service</label>
+      <select id="service" name="service">
+        <option>House Cleaning</option>
+        <option>Lawn Care</option>
+        <option>Plumbing</option>
+        <option>Painting</option>
+      </select>
+
+      <label for="date">Preferred Date/Time</label>
+      <input id="date" name="date" placeholder="e.g. Oct 20, 3:00 PM" />
+
+      <label for="notes">Additional Notes</label>
+      <textarea id="notes" name="notes" rows="3" placeholder="Anything else we should know?"></textarea>
+
+      <button type="submit">Confirm Booking</button>
+      <div class="status" id="status"></div>
+    </form>
+  </main>
+
+  <footer>
+    © 2025 TaskFlow — All rights reserved.
+  </footer>
 
   <script>
     const form = document.getElementById('bookingForm');
     const status = document.getElementById('status');
-    const payLink = document.getElementById('payLink');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       status.textContent = "Sending...";
@@ -88,27 +134,20 @@
         notes: form.notes.value
       };
       try {
-       const res = await fetch('https://taskflow-mvp-v2.onrender.com/api/leads', {
-
+        const res = await fetch('https://taskflow-mvp-v2.onrender.com/api/leads', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(payload)
         });
         if(res.ok){
-          const data = await res.json();
-          status.textContent = "Thanks — your request was received. The business will follow up soon.";
+          status.textContent = "✅ Booking received! We’ll reach out shortly.";
           form.reset();
-          // show demo pay link (if returned)
-          if(data.payLink){
-            payLink.href = data.payLink;
-            payLink.style.display = "inline-block";
-          }
         } else {
           const txt = await res.text();
           status.textContent = "Error: " + txt;
         }
-      } catch(err){
-        status.textContent = "Network error — can't reach server.";
+      } catch {
+        status.textContent = "⚠️ Network error — server unreachable.";
       }
     });
   </script>
