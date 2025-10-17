@@ -8,7 +8,8 @@
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #f5f6fa;
+      background-color: #0f172a;
+      color: #e2e8f0;
       margin: 0;
       display: flex;
       height: 100vh;
@@ -17,32 +18,40 @@
 
     /* Sidebar */
     .sidebar {
-      width: 240px;
-      background-color: #0b74de;
-      color: white;
+      width: 250px;
+      background: linear-gradient(180deg, #1e293b, #0f172a);
       display: flex;
       flex-direction: column;
-      padding: 20px;
+      padding: 25px 20px;
+      box-shadow: 4px 0 15px rgba(0,0,0,0.3);
     }
     .sidebar h2 {
-      margin: 0 0 30px;
-      font-size: 22px;
+      color: #fff;
       font-weight: 700;
+      margin-bottom: 40px;
+      text-align: center;
     }
-    .sidebar a {
-      color: white;
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #cbd5e1;
       text-decoration: none;
-      padding: 12px;
-      border-radius: 8px;
-      display: block;
+      padding: 12px 14px;
+      border-radius: 10px;
       margin-bottom: 8px;
-      transition: background 0.3s;
+      transition: background 0.25s, color 0.25s;
     }
-    .sidebar a:hover, .sidebar a.active {
-      background-color: #095fbd;
+    .nav-link:hover,
+    .nav-link.active {
+      background-color: #334155;
+      color: #fff;
+    }
+    .nav-link span {
+      font-size: 16px;
     }
 
-    /* Main section */
+    /* Main Section */
     .main {
       flex: 1;
       display: flex;
@@ -53,103 +62,138 @@
     /* Topbar */
     .topbar {
       height: 60px;
-      background: white;
-      border-bottom: 1px solid #e5e9f0;
+      background: #1e293b;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 24px;
+      border-bottom: 1px solid #334155;
     }
     .topbar h1 {
       font-size: 18px;
+      color: #f8fafc;
       font-weight: 600;
-      color: #222;
     }
     .topbar button {
-      background: #0b74de;
-      color: #fff;
+      background: #3b82f6;
+      color: white;
       border: none;
       border-radius: 8px;
       padding: 8px 14px;
-      font-size: 14px;
       cursor: pointer;
+      font-weight: 600;
+    }
+    .topbar button:hover {
+      background: #2563eb;
     }
 
     /* Content */
     .content {
-      padding: 20px;
+      padding: 24px;
       overflow-y: auto;
       flex: 1;
     }
-
-    /* Table and cards */
     .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      transition: transform 0.2s ease;
     }
+    .card:hover {
+      transform: translateY(-2px);
+    }
+    h2 {
+      color: #f1f5f9;
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    /* Table */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 12px;
+      margin-top: 14px;
     }
     th, td {
       text-align: left;
-      border-bottom: 1px solid #f0f0f0;
       padding: 10px;
+      border-bottom: 1px solid #334155;
+      color: #e2e8f0;
       font-size: 14px;
     }
     th {
-      background-color: #f9fafc;
-      font-weight: 600;
+      color: #93c5fd;
     }
 
-    /* Login screen */
+    #refreshBtn {
+      background: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    #refreshBtn:hover {
+      background: #2563eb;
+    }
+
+    /* Login Screen */
     #loginScreen {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #f5f6fa;
+      background: #0f172a;
       display: flex;
       justify-content: center;
       align-items: center;
+      z-index: 10;
     }
     .login-box {
-      background: white;
+      background: #1e293b;
       padding: 40px;
-      border-radius: 12px;
-      width: 320px;
+      border-radius: 14px;
       text-align: center;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+      width: 340px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     }
     .login-box h2 {
-      margin-bottom: 20px;
+      color: #f8fafc;
+      margin-bottom: 18px;
     }
     .login-box input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin-bottom: 15px;
       border-radius: 8px;
-      border: 1px solid #ddd;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
       font-size: 15px;
     }
     .login-box button {
       width: 100%;
-      padding: 10px;
-      background: #0b74de;
+      padding: 12px;
+      background: #3b82f6;
       border: none;
       border-radius: 8px;
       color: white;
       font-weight: 600;
+      font-size: 15px;
       cursor: pointer;
     }
+    .login-box button:hover {
+      background: #2563eb;
+    }
     .login-box p {
-      color: red;
+      color: #f87171;
       font-size: 14px;
+      margin-top: 8px;
     }
 
   </style>
@@ -160,27 +204,27 @@
   <div id="loginScreen">
     <div class="login-box">
       <h2>Admin Login</h2>
-      <input type="password" id="adminPass" placeholder="Enter password" />
+      <input type="password" id="adminPass" placeholder="Enter Password" />
       <button id="loginBtn">Login</button>
       <p id="loginStatus"></p>
     </div>
   </div>
 
-  <!-- Dashboard -->
+  <!-- Sidebar -->
   <div class="sidebar" id="sidebar" style="display:none;">
     <h2>TaskFlow</h2>
-    <a href="#" class="active">📋 Leads</a>
-    <a href="#">💬 Messages</a>
-    <a href="#">📅 Calendar</a>
-    <a href="#">⚙️ Settings</a>
+    <a href="#" class="nav-link active"><span>📋</span> Leads</a>
+    <a href="#" class="nav-link"><span>💬</span> Conversations</a>
+    <a href="#" class="nav-link"><span>📅</span> Calendar</a>
+    <a href="#" class="nav-link"><span>⚙️</span> Settings</a>
   </div>
 
+  <!-- Main Content -->
   <div class="main" id="mainPanel" style="display:none;">
     <div class="topbar">
       <h1>Leads Dashboard</h1>
       <button id="logoutBtn">Logout</button>
     </div>
-
     <div class="content">
       <div class="card">
         <h2>Recent Leads</h2>
