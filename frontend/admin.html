@@ -4,302 +4,261 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TaskFlow Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0f172a;
-      color: #e2e8f0;
       margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #f6f8fc;
       display: flex;
       height: 100vh;
-      overflow: hidden;
     }
-
     /* Sidebar */
     .sidebar {
-      width: 250px;
-      background: linear-gradient(180deg, #1e293b, #0f172a);
+      width: 230px;
+      background: #0b74de;
+      color: #fff;
       display: flex;
       flex-direction: column;
-      padding: 25px 20px;
-      box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+      padding: 20px;
     }
     .sidebar h2 {
-      color: #fff;
-      font-weight: 700;
-      margin-bottom: 40px;
+      font-size: 20px;
+      margin: 0 0 20px;
       text-align: center;
     }
-    .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #cbd5e1;
-      text-decoration: none;
-      padding: 12px 14px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      transition: background 0.25s, color 0.25s;
-    }
-    .nav-link:hover,
-    .nav-link.active {
-      background-color: #334155;
+    .sidebar button {
+      background: rgba(255,255,255,0.15);
+      border: none;
       color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    .nav-link span {
-      font-size: 16px;
-    }
+    .sidebar button:hover { background: rgba(255,255,255,0.3); }
 
-    /* Main Section */
+    /* Main area */
     .main {
       flex: 1;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
 
-    /* Topbar */
+    /* Top bar */
     .topbar {
-      height: 60px;
-      background: #1e293b;
+      background: #fff;
+      padding: 16px 24px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
-      border-bottom: 1px solid #334155;
     }
-    .topbar h1 {
-      font-size: 18px;
-      color: #f8fafc;
-      font-weight: 600;
-    }
-    .topbar button {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .topbar button:hover {
-      background: #2563eb;
-    }
+    .topbar h1 { font-size: 18px; margin: 0; }
 
-    /* Content */
-    .content {
-      padding: 24px;
-      overflow-y: auto;
-      flex: 1;
+    /* Stats cards */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      padding: 20px;
     }
     .card {
-      background: #1e293b;
-      padding: 24px;
-      border-radius: 14px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      text-align: center;
       transition: transform 0.2s ease;
     }
-    .card:hover {
-      transform: translateY(-2px);
-    }
-    h2 {
-      color: #f1f5f9;
-      margin-top: 0;
-      margin-bottom: 14px;
-    }
+    .card:hover { transform: translateY(-3px); }
+    .card h3 { margin: 0; color: #666; font-size: 14px; }
+    .card p { font-size: 24px; margin: 8px 0 0; font-weight: 600; color: #0b74de; }
 
-    /* Table */
+    /* Chart + Table */
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 20px;
+      padding: 20px;
+    }
+    canvas { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 14px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
-    th, td {
-      text-align: left;
-      padding: 10px;
-      border-bottom: 1px solid #334155;
-      color: #e2e8f0;
-      font-size: 14px;
-    }
-    th {
-      color: #93c5fd;
-    }
+    th, td { padding: 10px 14px; border-bottom: 1px solid #eee; font-size: 14px; text-align: left; }
+    th { background: #f8f9fb; color: #555; }
+    tr:hover { background: #f1f5ff; }
 
-    #refreshBtn {
-      background: #3b82f6;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      padding: 8px 14px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 10px;
-    }
-    #refreshBtn:hover {
-      background: #2563eb;
-    }
-
-    /* Login Screen */
-    #loginScreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #0f172a;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-    }
-    .login-box {
-      background: #1e293b;
+    /* Login */
+    #loginSection {
+      margin: auto;
+      background: #fff;
       padding: 40px;
-      border-radius: 14px;
+      border-radius: 12px;
       text-align: center;
-      width: 340px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
     }
-    .login-box h2 {
-      color: #f8fafc;
-      margin-bottom: 18px;
-    }
-    .login-box input {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      border: 1px solid #475569;
-      background: #0f172a;
-      color: #e2e8f0;
+    input, button {
       font-size: 15px;
-    }
-    .login-box button {
-      width: 100%;
-      padding: 12px;
-      background: #3b82f6;
-      border: none;
+      padding: 10px;
       border-radius: 8px;
-      color: white;
+      border: 1px solid #ddd;
+      margin-top: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #0b74de;
+      color: #fff;
       font-weight: 600;
-      font-size: 15px;
       cursor: pointer;
     }
-    .login-box button:hover {
-      background: #2563eb;
-    }
-    .login-box p {
-      color: #f87171;
-      font-size: 14px;
-      margin-top: 8px;
-    }
-
+    button:hover { background: #095fbd; }
   </style>
 </head>
 <body>
 
-  <!-- Login Screen -->
-  <div id="loginScreen">
-    <div class="login-box">
-      <h2>Admin Login</h2>
-      <input type="password" id="adminPass" placeholder="Enter Password" />
-      <button id="loginBtn">Login</button>
-      <p id="loginStatus"></p>
-    </div>
+  <!-- Login Section -->
+  <div id="loginSection">
+    <h2>Admin Login</h2>
+    <input type="password" id="adminPass" placeholder="Enter password">
+    <button id="loginBtn">Login</button>
+    <p id="loginStatus" style="color:red;"></p>
   </div>
 
-  <!-- Sidebar -->
-  <div class="sidebar" id="sidebar" style="display:none;">
-    <h2>TaskFlow</h2>
-    <a href="#" class="nav-link active"><span>📋</span> Leads</a>
-    <a href="#" class="nav-link"><span>💬</span> Conversations</a>
-    <a href="#" class="nav-link"><span>📅</span> Calendar</a>
-    <a href="#" class="nav-link"><span>⚙️</span> Settings</a>
-  </div>
-
-  <!-- Main Content -->
-  <div class="main" id="mainPanel" style="display:none;">
-    <div class="topbar">
-      <h1>Leads Dashboard</h1>
-      <button id="logoutBtn">Logout</button>
+  <!-- Dashboard -->
+  <div class="main" id="adminPanel" style="display:none;">
+    <div class="sidebar">
+      <h2>TaskFlow</h2>
+      <button id="refreshBtn">🔄 Refresh</button>
+      <button onclick="alert('Feature coming soon!')">⚙️ Settings</button>
+      <button onclick="alert('Logging out...'); location.reload();">🚪 Logout</button>
     </div>
-    <div class="content">
-      <div class="card">
-        <h2>Recent Leads</h2>
-        <button id="refreshBtn">🔄 Refresh</button>
-        <table>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Admin Dashboard</h1>
+        <span id="datetime"></span>
+      </div>
+
+      <div class="stats">
+        <div class="card"><h3>Total Leads</h3><p id="totalLeads">0</p></div>
+        <div class="card"><h3>Revenue</h3><p>$0</p></div>
+        <div class="card"><h3>Conversion Rate</h3><p>0%</p></div>
+        <div class="card"><h3>This Week</h3><p id="weeklyLeads">0</p></div>
+      </div>
+
+      <div class="content">
+        <canvas id="leadsChart"></canvas>
+        <table id="leadsTable">
           <thead>
             <tr>
               <th>Name</th>
               <th>Phone</th>
               <th>Service</th>
-              <th>Preferred Time</th>
+              <th>When</th>
               <th>Notes</th>
             </tr>
           </thead>
-          <tbody id="leadsBody">
-            <tr><td colspan="5">Loading...</td></tr>
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
     </div>
   </div>
 
   <script>
-    const API_BASE = "https://taskflow-mvp-v2.onrender.com";
+    const API_BASE = 'https://taskflow-mvp-v2.onrender.com';
+    const loginBtn = document.getElementById('loginBtn');
+    const adminPass = document.getElementById('adminPass');
+    const loginStatus = document.getElementById('loginStatus');
+    const loginSection = document.getElementById('loginSection');
+    const adminPanel = document.getElementById('adminPanel');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const leadsTableBody = document.querySelector('#leadsTable tbody');
+    const totalLeads = document.getElementById('totalLeads');
+    const weeklyLeads = document.getElementById('weeklyLeads');
+    let chart;
 
-    const loginBtn = document.getElementById("loginBtn");
-    const adminPass = document.getElementById("adminPass");
-    const loginScreen = document.getElementById("loginScreen");
-    const sidebar = document.getElementById("sidebar");
-    const mainPanel = document.getElementById("mainPanel");
-    const loginStatus = document.getElementById("loginStatus");
-    const refreshBtn = document.getElementById("refreshBtn");
-    const leadsBody = document.getElementById("leadsBody");
-    const logoutBtn = document.getElementById("logoutBtn");
+    // DateTime
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('datetime').textContent = now.toLocaleString();
+    }
+    setInterval(updateTime, 1000);
 
     // Login
-    loginBtn.addEventListener("click", async () => {
+    loginBtn.addEventListener('click', async () => {
       const password = adminPass.value.trim();
       if (!password) {
-        loginStatus.textContent = "Please enter password.";
+        loginStatus.textContent = "Please enter a password.";
         return;
       }
       loginStatus.textContent = "Checking...";
       try {
         const res = await fetch(`${API_BASE}/api/admin-login`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({ password })
         });
         if (res.ok) {
-          loginScreen.style.display = "none";
-          sidebar.style.display = "flex";
-          mainPanel.style.display = "flex";
+          loginSection.style.display = 'none';
+          adminPanel.style.display = 'flex';
           loadLeads();
         } else {
-          loginStatus.textContent = "❌ Wrong password.";
+          loginStatus.textContent = "❌ Wrong password. Try again.";
         }
-      } catch (e) {
-        loginStatus.textContent = "⚠️ Network error.";
+      } catch {
+        loginStatus.textContent = "Network error.";
       }
     });
 
     // Load leads
     async function loadLeads() {
-      leadsBody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+      leadsTableBody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
       try {
         const res = await fetch(`${API_BASE}/api/leads-list`);
         const data = await res.json();
-        leadsBody.innerHTML = "";
-        if (data.length === 0) {
-          leadsBody.innerHTML = "<tr><td colspan='5'>No leads yet.</td></tr>";
-          return;
-        }
-        for (const lead of data) {
-          const tr = document.createElement("tr");
+        leadsTableBody.innerHTML = "";
+        totalLeads.textContent = data.length;
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const weekCount = data.filter(l => new Date(l.createdAt) > weekAgo).length;
+        weeklyLeads.textContent = weekCount;
+
+        const byDate = {};
+        data.forEach(l => {
+          const day = l.createdAt ? l.createdAt.slice(0,10) : "Unknown";
+          byDate[day] = (byDate[day] || 0) + 1;
+        });
+
+        if (chart) chart.destroy();
+        const ctx = document.getElementById('leadsChart').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: Object.keys(byDate),
+            datasets: [{
+              label: 'Leads Over Time',
+              data: Object.values(byDate),
+              borderColor: '#0b74de',
+              backgroundColor: 'rgba(11,116,222,0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        data.forEach(lead => {
+          const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${lead.name}</td>
             <td>${lead.phone}</td>
@@ -307,15 +266,14 @@
             <td>${lead.preferred || ''}</td>
             <td>${lead.notes || ''}</td>
           `;
-          leadsBody.appendChild(tr);
-        }
-      } catch (e) {
-        leadsBody.innerHTML = "<tr><td colspan='5'>Error loading leads.</td></tr>";
+          leadsTableBody.appendChild(tr);
+        });
+      } catch {
+        leadsTableBody.innerHTML = "<tr><td colspan='5'>Error loading leads.</td></tr>";
       }
     }
 
-    refreshBtn.addEventListener("click", loadLeads);
-    logoutBtn.addEventListener("click", () => location.reload());
+    refreshBtn.addEventListener('click', loadLeads);
   </script>
 </body>
 </html>
