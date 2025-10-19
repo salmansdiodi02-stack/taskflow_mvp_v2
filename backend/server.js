@@ -159,10 +159,16 @@ app.get('/api/installed-snapshots', (req,res) => {
   catch(e){ res.status(500).send('error'); }
 });
 
-// === SPA FALLBACK ===
+// Serve admin.html directly if requested
+app.get('/frontend/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'admin.html'));
+});
+
+// SPA fallback - everything else goes to public index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
 });
+
 
 // === SOCKET.IO CONNECTION ===
 io.on('connection', (socket) => {
