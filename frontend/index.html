@@ -1,153 +1,244 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TaskFlow — Book Your Service</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow Booking</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- 🔥 THIS IS THE STYLE SECTION -->
   <style>
-    :root {
-      --primary: #4f46e5;
-      --bg: #f9fafb;
-      --text: #111827;
-      --muted: #6b7280;
-      --card: #ffffff;
-    }
-    * { box-sizing: border-box; }
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(135deg, #f4f3ff, #ffffff);
       margin: 0;
-      padding: 0;
-      background: var(--bg);
-      color: var(--text);
+      padding: 40px;
+      color: #333;
     }
-    header {
-      background: linear-gradient(135deg, var(--primary), #6366f1);
-      color: white;
-      text-align: center;
-      padding: 60px 20px;
-    }
-    header h1 { font-size: 32px; margin: 0 0 10px; }
-    header p { margin: 0; font-size: 16px; opacity: 0.9; }
 
-    main {
-      max-width: 800px;
-      margin: -40px auto 40px;
-      background: var(--card);
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
       border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.05);
       padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
 
-    h2 {
-      margin-top: 0;
+    .header h1 {
       text-align: center;
-      font-size: 22px;
+      margin-bottom: 10px;
+      color: #5b4bff;
+      font-weight: 700;
     }
 
-    form { display: flex; flex-direction: column; gap: 14px; }
-    label { font-weight: 600; font-size: 14px; }
-    input, select, textarea {
-      padding: 10px 12px;
-      border: 1px solid #e5e7eb;
+    .progress-bar {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0 40px;
+    }
+
+    .progress-bar::before {
+      content: "";
+      position: absolute;
+      height: 4px;
+      background: #eee;
+      width: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 0;
+    }
+
+    .progress {
+      position: absolute;
+      height: 4px;
+      background: linear-gradient(90deg, #5b4bff, #9f7bff);
+      width: 0%;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
+      transition: 0.4s ease;
+    }
+
+    .step {
+      z-index: 2;
+      background: #fff;
+      border: 2px solid #ddd;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: #999;
+      transition: 0.3s;
+    }
+
+    .step.active {
+      border-color: #5b4bff;
+      color: #5b4bff;
+      transform: scale(1.1);
+    }
+
+    .form-step {
+      display: none;
+      animation: fade 0.3s ease;
+    }
+
+    .form-step.active {
+      display: block;
+    }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      font-weight: 500;
+      color: #555;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
       border-radius: 8px;
+      border: 1px solid #ddd;
       font-size: 14px;
+      transition: 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #5b4bff;
+      box-shadow: 0 0 4px rgba(91,75,255,0.2);
     }
 
     button {
-      background: var(--primary);
+      background: #5b4bff;
       color: white;
-      padding: 12px;
+      padding: 12px 20px;
       border: none;
       border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
+      margin-top: 16px;
       cursor: pointer;
-      transition: background 0.2s ease;
+      font-weight: 600;
+      transition: background 0.3s ease, transform 0.2s;
     }
-    button:hover { background: #4338ca; }
+
+    button:hover {
+      background: #4a3bdd;
+      transform: translateY(-1px);
+    }
 
     .status {
-      text-align: center;
-      margin-top: 10px;
+      margin-top: 14px;
       font-size: 14px;
-      color: var(--muted);
+      color: #444;
     }
 
-    footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 13px;
-      color: var(--muted);
+    @media (max-width: 600px) {
+      body { padding: 20px; }
+      .container { padding: 20px; }
     }
   </style>
+  <!-- 🔥 END OF STYLE SECTION -->
 </head>
+
 <body>
-  <header>
-    <h1>TaskFlow</h1>
-    <p>Grow your business on autopilot — Schedule clients effortlessly</p>
-  </header>
+  <div class="container">
+    <header class="header">
+      <h1>TaskFlow Booking</h1>
+      <div class="progress-bar">
+        <div class="progress" id="progress"></div>
+        <div class="step active">1</div>
+        <div class="step">2</div>
+        <div class="step">3</div>
+      </div>
+    </header>
 
-  <main>
-    <h2>Book Your Service</h2>
     <form id="bookingForm">
-      <label for="name">Full Name</label>
-      <input id="name" name="name" placeholder="John Doe" required />
+      <!-- STEP 1 -->
+      <div class="form-step active" id="step1">
+        <h2>Contact Information</h2>
+        <label>Name</label>
+        <input name="name" required />
+        <label>Phone</label>
+        <input name="phone" placeholder="+1..." required />
+        <button type="button" onclick="nextStep()">Next →</button>
+      </div>
 
-      <label for="phone">Phone Number</label>
-      <input id="phone" name="phone" placeholder="+1..." required />
+      <!-- STEP 2 -->
+      <div class="form-step" id="step2">
+        <h2>Service Details</h2>
+        <label>Service</label>
+        <select name="service">
+          <option>House Cleaning</option>
+          <option>Lawn Care</option>
+          <option>Painting</option>
+          <option>Plumbing</option>
+        </select>
+        <label>Preferred Date/Time</label>
+        <input name="preferred" placeholder="e.g. Oct 20 at 3 PM" />
+        <button type="button" onclick="prevStep()">← Back</button>
+        <button type="button" onclick="nextStep()">Next →</button>
+      </div>
 
-      <label for="service">Select Service</label>
-      <select id="service" name="service">
-        <option>House Cleaning</option>
-        <option>Lawn Care</option>
-        <option>Plumbing</option>
-        <option>Painting</option>
-      </select>
-
-      <label for="date">Preferred Date/Time</label>
-      <input id="date" name="date" placeholder="e.g. Oct 20, 3:00 PM" />
-
-      <label for="notes">Additional Notes</label>
-      <textarea id="notes" name="notes" rows="3" placeholder="Anything else we should know?"></textarea>
-
-      <button type="submit">Confirm Booking</button>
-      <div class="status" id="status"></div>
+      <!-- STEP 3 -->
+      <div class="form-step" id="step3">
+        <h2>Confirm & Submit</h2>
+        <p>Review your info and submit your booking.</p>
+        <button type="button" onclick="prevStep()">← Back</button>
+        <button type="submit">Submit Booking</button>
+        <div id="status" class="status"></div>
+      </div>
     </form>
-  </main>
-
-  <footer>
-    © 2025 TaskFlow — All rights reserved.
-  </footer>
+  </div>
 
   <script>
+    let current = 1;
+    const total = 3;
+
+    function showStep(n) {
+      document.querySelectorAll('.form-step').forEach((s, i) => {
+        s.classList.toggle('active', i === n - 1);
+      });
+      document.querySelectorAll('.step').forEach((s, i) => {
+        s.classList.toggle('active', i <= n - 1);
+      });
+      document.getElementById('progress').style.width = ((n - 1) / (total - 1)) * 100 + '%';
+      current = n;
+    }
+
+    function nextStep() { if (current < total) showStep(current + 1); }
+    function prevStep() { if (current > 1) showStep(current - 1); }
+
     const form = document.getElementById('bookingForm');
-    const status = document.getElementById('status');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const status = document.getElementById('status');
       status.textContent = "Sending...";
-      const payload = {
-        name: form.name.value,
-        phone: form.phone.value,
-        service: form.service.value,
-        preferred: form.date.value,
-        notes: form.notes.value
-      };
+      const payload = Object.fromEntries(new FormData(form));
       try {
         const res = await fetch('https://taskflow-mvp-v2.onrender.com/api/leads', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(payload)
         });
-        if(res.ok){
-          status.textContent = "✅ Booking received! We’ll reach out shortly.";
+        if (res.ok) {
+          showStep(1);
           form.reset();
+          status.textContent = "✅ Booking received! We’ll contact you soon.";
         } else {
-          const txt = await res.text();
-          status.textContent = "Error: " + txt;
+          status.textContent = "❌ Error submitting booking.";
         }
       } catch {
-        status.textContent = "⚠️ Network error — server unreachable.";
+        status.textContent = "⚠️ Network error.";
       }
     });
   </script>
