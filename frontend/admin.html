@@ -1,571 +1,191 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TaskFlow Admin — Dashboard</title>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<!-- Socket.io client (match backend socket.io version) -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <style>
   :root{
-    --bg:#0d1620;       /* page background (dark) */
-    --sidebar:#0f2130;  /* sidebar */
-    --card:#0b1722;     /* card bg */
-    --muted:#9aa6b2;    /* muted text */
-    --accent:#7c3aed;   /* purple accent */
-    --accent-2:#6b21a8;
-    --glass: rgba(255,255,255,0.02);
-    --kpi-bg: rgba(255,255,255,0.01);
+    --bg:#f5f7fb; --card:#fff; --muted:#6b7280; --accent:#7c3aed; --accent-2:#6b21a8; --glass: rgba(255,255,255,0.6);
   }
-
-  /* Light theme overrides */
-  [data-theme="light"]{
-    --bg:#f5f7fb;
-    --sidebar:#ffffff;
-    --card:#ffffff;
-    --muted:#6b7280;
-    --accent:#7c3aed;
-    --accent-2:#6b21a8;
-    --glass: rgba(0,0,0,0.03);
-    --kpi-bg: rgba(11,20,30,0.03);
+  [data-theme="dark"]{
+    --bg:#0f1724; --card:#111827; --muted:#9ca3af; --accent:#8b5cf6; --accent-2:#7c3aed; --glass: rgba(255,255,255,0.02);
   }
-
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;background:var(--bg);color:#ecf2f7}
-  .wrap{display:flex;min-height:100vh}
-  /* Sidebar */
-  .sidebar{width:230px;background:var(--sidebar);padding:28px 18px;border-right:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:18px}
-  .brand{font-weight:800;color:var(--accent);font-size:18px;padding-bottom:6px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;background:var(--bg);color:#0b1220}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(0,0,0,0.06)}
+  .wrap{display:flex;min-height:calc(100vh - 64px)}
+  .sidebar{width:220px;background:linear-gradient(180deg,rgba(124,58,237,0.06),rgba(124,58,237,0.02));padding:24px;border-right:1px solid rgba(0,0,0,0.05)}
+  [data-theme="dark"] .sidebar{background:linear-gradient(180deg,rgba(124,58,237,0.04),rgba(0,0,0,0.02));border-right:1px solid rgba(255,255,255,0.02)}
+  .brand{font-weight:800;color:var(--accent);margin-bottom:22px}
   .nav{display:flex;flex-direction:column;gap:8px}
-  .nav button{background:transparent;border:0;color:var(--muted);padding:12px 10px;border-radius:10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:600}
-  .nav button.active{background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(99,102,241,0.02));color:var(--accent);box-shadow:0 6px 18px rgba(2,6,23,0.35)}
-  .sidebar .small{font-size:12px;color:var(--muted);margin-top:auto}
+  .nav button{background:transparent;border:0;color:var(--muted);padding:12px;border-radius:10px;text-align:left;cursor:pointer;font-size:15px;font-weight:600;transition:all .25s}
+  .nav button.active{background:linear-gradient(90deg,rgba(124,58,237,0.14),rgba(99,102,241,0.06));color:var(--accent)}
+  .sidebar .small{font-size:12px;color:var(--muted);margin-top:12px}
 
-  /* Main */
-  .main{flex:1;padding:22px 28px;overflow:auto}
-  header.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .main{flex:1;padding:24px;transition:all .4s}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
   .controls{display:flex;gap:10px;align-items:center}
-  .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);font-weight:600}
-  .btn.small{padding:6px 10px;font-size:13px}
+  .btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);color:var(--muted);font-weight:600}
+  [data-theme="dark"] .btn.ghost{border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
 
-  /* KPI grid */
+  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.06);transition:all .3s}
+  [data-theme="dark"] .card{box-shadow:0 6px 18px rgba(2,6,23,0.4)}
   .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.5);min-height:86px}
-  .kpi{font-size:13px;color:var(--muted);margin-bottom:8px}
-  .kpi .value{font-size:22px;color:var(--accent);font-weight:800}
 
-  /* grid body */
-  .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}
-  .chartCard{height:380px}
-  canvas{width:100%!important;height:100%!important}
-
-  /* Leads */
-  .leads{background:var(--card);padding:12px;border-radius:12px;max-height:480px;overflow:auto}
   table{width:100%;border-collapse:collapse}
-  th,td{padding:10px;text-align:left;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.02)}
-  th{font-weight:700}
-  .small-muted{font-size:13px;color:var(--muted)}
+  th,td{padding:8px;text-align:left;font-size:13px;border-bottom:1px solid rgba(0,0,0,0.04);color:var(--muted)}
+  [data-theme="dark"] th,[data-theme="dark"] td{border-bottom:1px solid rgba(255,255,255,0.02)}
 
-  /* Snapshots area (in Settings only; not main UI) */
-  .snapshots{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-
-  /* Toast notifications */
-  .notif{position:fixed;right:20px;bottom:20px;z-index:9999}
-  .toast{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:12px 14px;border-radius:10px;box-shadow:0 8px 30px rgba(2,6,23,0.5);display:flex;gap:12px;align-items:center;margin-top:8px;opacity:0;transform:translateY(12px);transition:all .35s}
+  .notif{position:fixed;right:22px;bottom:22px;z-index:999}
+  .toast{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:12px 14px;border-radius:10px;box-shadow:0 8px 30px rgba(11,20,30,0.3);margin-top:8px;opacity:0;transform:translateY(8px);transition:all .35s}
   .toast.show{opacity:1;transform:none}
 
-  /* Login */
-  #loginSection{max-width:520px;margin:70px auto;background:var(--card);padding:24px;border-radius:12px;box-shadow:0 12px 30px rgba(2,6,23,0.5)}
-  label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
-  input[type="password"], input[type="text"], select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);margin-bottom:8px;background:transparent;color:inherit}
-  [data-theme="light"] input{border:1px solid rgba(0,0,0,0.07);background:#fff;color:#111}
-
-  /* Settings layout */
-  .settingsGrid{display:grid;grid-template-columns:1fr 340px;gap:14px;margin-top:12px}
-  .panel{background:var(--card);padding:14px;border-radius:10px}
-
-  /* small responsive */
-  @media (max-width:1000px){ .sidebar{display:none} .grid{grid-template-columns:1fr} .metrics{grid-template-columns:repeat(2,1fr)} }
+  /* Settings */
+  .settings-grid{display:flex;flex-direction:column;gap:16px}
+  .settings-item{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(11,20,30,0.06)}
+  .settings-item h4{margin-bottom:8px}
+  .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
 </style>
 </head>
 <body>
 
-<!-- Login Section -->
-<div id="loginSection">
-  <h2 style="margin:0 0 8px;color:var(--muted)">Admin Login</h2>
-  <label>Admin Password</label>
-  <input id="adminPassword" type="password" placeholder="Enter admin password" />
-  <div style="display:flex;gap:8px;margin-top:8px">
-    <button id="loginBtn" class="btn">Login</button>
-    <button id="tryDemo" class="btn small ghost">Try Demo (no password)</button>
-  </div>
-  <p id="loginFeedback" class="small-muted" style="margin-top:8px"></p>
+<header>
+  <div style="font-weight:800;color:var(--accent)">TaskFlow Admin</div>
+  <div id="serverTime" class="small" style="color:var(--muted)"></div>
+</header>
+
+<div class="wrap">
+  <aside class="sidebar">
+    <div class="brand">TaskFlow</div>
+    <div class="nav">
+      <button class="active" data-tab="dashboard">Dashboard</button>
+      <button data-tab="leads">Leads</button>
+      <button data-tab="snapshots">Snapshots</button>
+      <button data-tab="settings">Settings</button>
+    </div>
+    <div class="small">Logged in as Admin</div>
+  </aside>
+
+  <main class="main">
+    <section id="tab-dashboard">
+      <div class="metrics">
+        <div class="card"><div>Total Leads</div><h2 id="totalLeads">0</h2></div>
+        <div class="card"><div>Bookings This Week</div><h2 id="bookingsWeek">0</h2></div>
+        <div class="card"><div>Services</div><h2 id="servicesCount">0</h2></div>
+        <div class="card"><div>Pending Follow-ups</div><h2 id="pendingFollowups">0</h2></div>
+      </div>
+      <div class="card"><canvas id="leadsChart" height="320"></canvas></div>
+    </section>
+
+    <section id="tab-leads" style="display:none">
+      <div class="card">
+        <table><thead><tr><th>Name</th><th>Phone</th><th>Service</th><th>When</th><th>Notes</th></tr></thead>
+        <tbody id="leadsTbody"><tr><td colspan="5">No leads yet.</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <section id="tab-snapshots" style="display:none">
+      <div class="card">
+        <h3>Snapshots</h3>
+        <div id="snapList">Loading snapshots...</div>
+      </div>
+    </section>
+
+    <section id="tab-settings" style="display:none">
+      <div class="settings-grid">
+        <div class="settings-item">
+          <h4>Admin Info</h4>
+          <p><strong>Name:</strong> Salman Ibrahim</p>
+        </div>
+
+        <div class="settings-item">
+          <h4>System Status</h4>
+          <p><span id="statusDot" class="status-dot" style="background:#aaa"></span>
+          <span id="statusText">Checking...</span></p>
+        </div>
+
+        <div class="settings-item">
+          <h4>Theme</h4>
+          <button id="themeToggle" class="btn">Toggle Theme</button>
+        </div>
+
+        <div class="settings-item">
+          <h4>Sound</h4>
+          <button id="soundToggle" class="btn ghost">🔔 On</button>
+        </div>
+
+        <div class="settings-item">
+          <h4>Account</h4>
+          <button id="logoutBtn" class="btn ghost">Logout</button>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
 
-<!-- Main App -->
-<div id="app" style="display:none" data-theme="dark">
-  <div class="wrap">
-    <aside class="sidebar">
-      <div class="brand">TaskFlow</div>
-      <nav class="nav" role="navigation" aria-label="Main">
-        <button class="active" data-tab="dashboard">📈 Dashboard</button>
-        <button data-tab="leads">📋 Leads</button>
-        <button data-tab="settings">⚙️ Settings</button>
-      </nav>
-      <div class="small" style="margin-top:auto">Logged in as Admin</div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <div style="font-weight:800;color:var(--accent)">Dashboard Overview</div>
-          <div class="small-muted" id="headerSub">Real-time metrics</div>
-        </div>
-        <div class="controls">
-          <div id="serverTime" class="small-muted" style="min-width:160px;text-align:right"></div>
-          <button id="themeToggle" class="btn small ghost" title="Toggle theme">☾</button>
-          <button id="logoutBtn" class="btn small ghost" title="Logout">Logout</button>
-        </div>
-      </header>
-
-      <!-- Dashboard -->
-      <section id="tab-dashboard">
-        <div class="metrics">
-          <div class="card">
-            <div class="kpi">Total Leads</div>
-            <div class="value kpi"><span id="totalLeads">0</span></div>
-          </div>
-          <div class="card">
-            <div class="kpi">Bookings This Week</div>
-            <div class="value kpi"><span id="bookingsWeek">0</span></div>
-          </div>
-          <div class="card">
-            <div class="kpi">Services</div>
-            <div class="value kpi"><span id="servicesCount">0</span></div>
-          </div>
-          <div class="card">
-            <div class="kpi">Pending Follow-ups</div>
-            <div class="value kpi"><span id="pendingFollowups">0</span></div>
-          </div>
-        </div>
-
-        <div class="grid">
-          <div class="card chartCard">
-            <h3 style="margin:0 0 12px">Leads Over Time</h3>
-            <canvas id="leadsChart"></canvas>
-          </div>
-          <div class="card">
-            <h3 style="margin:0 0 12px">Service Breakdown</h3>
-            <div id="serviceBreakdown" style="min-height:260px;color:var(--muted);display:flex;align-items:center;justify-content:center">No data</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Leads -->
-      <section id="tab-leads" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div>
-            <h3 style="margin:0">Leads</h3>
-            <div class="small-muted">Recent leads and details</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button id="downloadJson" class="btn small ghost">Download JSON</button>
-            <button id="refreshBtn" class="btn small">Refresh</button>
-          </div>
-        </div>
-
-        <div class="leads card">
-          <table>
-            <thead><tr><th>Name</th><th>Phone</th><th>Service</th><th>When</th><th>Notes</th></tr></thead>
-            <tbody id="leadsTbody"><tr><td colspan="5" class="small-muted">No leads yet.</td></tr></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Settings -->
-      <section id="tab-settings" style="display:none">
-        <h3 style="margin:0 0 8px">Settings</h3>
-        <div class="settingsGrid">
-          <div class="panel">
-            <h4 style="margin-top:0">Profile & Preferences</h4>
-            <label>Profile name</label>
-            <input id="profileName" placeholder="Admin" />
-            <label>Role</label>
-            <input id="profileRole" placeholder="Owner" />
-            <label>Email</label>
-            <input id="profileEmail" placeholder="you@domain.com" />
-
-            <h4 style="margin-top:12px">Appearance & Notifications</h4>
-            <div style="display:flex;gap:8px;align-items:center">
-              <label style="min-width:140px">Theme</label>
-              <select id="themeSelect" style="padding:8px;border-radius:8px">
-                <option value="dark">Dark (default)</option>
-                <option value="light">Light</option>
-              </select>
-            </div>
-
-            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-              <label style="min-width:140px">Notifications</label>
-              <button id="notifToggle" class="btn small ghost">🔔 On</button>
-            </div>
-
-            <div style="margin-top:16px;display:flex;gap:8px">
-              <button id="saveSettings" class="btn">Save Settings</button>
-              <button id="resetSettings" class="btn small ghost">Reset</button>
-            </div>
-          </div>
-
-          <div class="panel">
-            <h4 style="margin-top:0">Technical</h4>
-            <div class="small-muted" style="margin-bottom:8px">Server & snapshots (kept here so general UI stays clean)</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <button id="fetchSnapshots" class="btn small ghost">Refresh Snapshots</button>
-              <button id="viewInstalled" class="btn small ghost">Installed</button>
-            </div>
-
-            <h5 style="margin-top:12px">Available snapshots</h5>
-            <div id="snapList" class="snapshots"><div class="small-muted">No snapshots loaded.</div></div>
-
-            <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
-
-            <h5>Installed</h5>
-            <div id="installedList" class="snapshots"><div class="small-muted">No installed snapshots.</div></div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- toasts -->
-  <div class="notif" id="notifArea"></div>
-</div>
+<div class="notif" id="notifArea"></div>
 
 <script>
-/* ========= Admin UI script ========= */
 (() => {
-  const API_BASE = window.location.origin; // same origin
-  // UI references
-  const loginSection = document.getElementById('loginSection');
-  const app = document.getElementById('app');
-  const loginBtn = document.getElementById('loginBtn');
-  const tryDemo = document.getElementById('tryDemo');
-  const adminPassword = document.getElementById('adminPassword');
-  const loginFeedback = document.getElementById('loginFeedback');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const themeToggle = document.getElementById('themeToggle');
+  const API_BASE = window.location.origin;
+  const root = document.body;
+  const notifArea = document.getElementById('notifArea');
   const serverTime = document.getElementById('serverTime');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const themeToggle = document.getElementById('themeToggle');
+  const soundToggle = document.getElementById('soundToggle');
 
-  // tabs
-  document.querySelectorAll('.nav button').forEach(btn => {
-    btn.addEventListener('click', () => {
+  // Theme handling
+  function applyTheme(t){ root.setAttribute('data-theme', t); localStorage.setItem('tf_theme', t); }
+  const storedTheme = localStorage.getItem('tf_theme') || 'light';
+  applyTheme(storedTheme);
+  themeToggle.onclick = ()=>applyTheme(root.getAttribute('data-theme')==='light'?'dark':'light');
+
+  // Sidebar tabs
+  document.querySelectorAll('.nav button').forEach(btn=>{
+    btn.onclick=()=>{
       document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('main section').forEach(s => s.style.display = (s.id === 'tab-'+tab ? '' : 'none'));
-    });
+      const tab=btn.dataset.tab;
+      document.querySelectorAll('main section').forEach(s=>s.style.display=s.id==='tab-'+tab?'':'none');
+    };
   });
 
-  /* Settings elements */
-  const themeSelect = document.getElementById('themeSelect');
-  const notifToggle = document.getElementById('notifToggle');
-  const saveSettings = document.getElementById('saveSettings');
-  const resetSettings = document.getElementById('resetSettings');
-  const profileName = document.getElementById('profileName');
-  const profileRole = document.getElementById('profileRole');
-  const profileEmail = document.getElementById('profileEmail');
-
-  /* Dashboard elements */
-  const totalLeadsEl = document.getElementById('totalLeads');
-  const bookingsWeekEl = document.getElementById('bookingsWeek');
-  const servicesCountEl = document.getElementById('servicesCount');
-  const pendingFollowupsEl = document.getElementById('pendingFollowups');
-  const leadsTbody = document.getElementById('leadsTbody');
-  const downloadJson = document.getElementById('downloadJson');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const fetchSnapshotsBtn = document.getElementById('fetchSnapshots');
-  const snapList = document.getElementById('snapList');
-  const installedList = document.getElementById('installedList');
-
-  const notifArea = document.getElementById('notifArea');
-
-  // small utils
-  function showToast(title, text){
-    const el = document.createElement('div');
-    el.className = 'toast';
-    el.innerHTML = `<div style="font-weight:700">${title}</div><div style="opacity:0.95;margin-left:8px">${text}</div>`;
-    notifArea.prepend(el);
-    requestAnimationFrame(()=>el.classList.add('show'));
-    el.addEventListener('click', ()=>el.remove());
-    setTimeout(()=>el.classList.remove('show'),7000);
-    setTimeout(()=>el.remove(),7600);
+  // Toasts
+  function showToast(t,x){
+    const el=document.createElement('div');el.className='toast';el.textContent=t+': '+x;
+    notifArea.prepend(el);setTimeout(()=>el.classList.add('show'),30);
+    setTimeout(()=>el.remove(),4000);
   }
-
-  // Theme handling (persist)
-  function applyTheme(t){
-    app.setAttribute('data-theme', t);
-    localStorage.setItem('tf_theme', t);
-    themeSelect.value = t;
-    themeToggle.textContent = t === 'dark' ? '☾' : '☀️';
-  }
-  themeSelect.addEventListener('change', ()=>applyTheme(themeSelect.value));
-  themeToggle.addEventListener('click', ()=>{
-    const cur = app.getAttribute('data-theme') || 'dark';
-    applyTheme(cur === 'dark' ? 'light' : 'dark');
-  });
-
-  // Notification toggle
-  let notifOn = true;
-  function updateNotifBtn(){ notifToggle.textContent = notifOn ? '🔔 On' : '🔕 Off'; }
-  notifToggle.addEventListener('click', ()=>{ notifOn = !notifOn; localStorage.setItem('tf_notif', notifOn ? '1':'0'); updateNotifBtn(); });
-
-  // Save / Reset settings
-  function loadSettingsFromStorage(){
-    const t = localStorage.getItem('tf_theme') || 'dark';
-    applyTheme(t);
-    notifOn = !!localStorage.getItem('tf_notif') || true;
-    updateNotifBtn();
-    profileName.value = localStorage.getItem('tf_profile_name') || 'Admin';
-    profileRole.value = localStorage.getItem('tf_profile_role') || 'Owner';
-    profileEmail.value = localStorage.getItem('tf_profile_email') || '';
-  }
-  saveSettings.addEventListener('click', ()=>{
-    localStorage.setItem('tf_profile_name', profileName.value || '');
-    localStorage.setItem('tf_profile_role', profileRole.value || '');
-    localStorage.setItem('tf_profile_email', profileEmail.value || '');
-    localStorage.setItem('tf_theme', themeSelect.value);
-    localStorage.setItem('tf_notif', notifOn ? '1':'0');
-    applyTheme(themeSelect.value);
-    showToast('Saved', 'Settings saved locally');
-  });
-  resetSettings.addEventListener('click', ()=>{
-    localStorage.removeItem('tf_profile_name');
-    localStorage.removeItem('tf_profile_role');
-    localStorage.removeItem('tf_profile_email');
-    localStorage.removeItem('tf_notif');
-    localStorage.removeItem('tf_theme');
-    loadSettingsFromStorage();
-    showToast('Reset', 'Settings cleared');
-  });
 
   // Chart
-  const ctx = document.getElementById('leadsChart').getContext('2d');
-  const leadsChart = new Chart(ctx, {
-    type:'line',
-    data:{labels:[], datasets:[{label:'Leads', data:[], fill:true, borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.08)', tension:0.35}]},
-    options:{animation:{duration:600}, scales:{y:{beginAtZero:true}}}
-  });
+  const ctx=document.getElementById('leadsChart').getContext('2d');
+  let leadsChart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'Leads',data:[],fill:true,tension:.4,borderColor: '#7c3aed',backgroundColor:'rgba(124,58,237,0.08)'}]},options:{scales:{y:{beginAtZero:true}}}});
 
-  function updateChartFromLeads(leads){
-    const buckets = {};
-    leads.forEach(l => {
-      const d = new Date(l.createdAt||Date.now());
-      const key = d.toISOString().slice(0,10);
-      buckets[key] = (buckets[key]||0)+1;
-    });
-    const labels = Object.keys(buckets).sort();
-    leadsChart.data.labels = labels;
-    leadsChart.data.datasets[0].data = labels.map(k=>buckets[k]);
-    leadsChart.update();
-  }
+  // Socket.io
+  const socket=io(API_BASE,{transports:['websocket','polling']});
+  socket.on('new_lead',ld=>showToast('New Lead',ld.name));
 
-  // Leads data and UI
-  let leads = [];
-  function renderLeadsTable(){
-    totalLeadsEl.textContent = leads.length || 0;
-    const weekCut = Date.now() - (7*24*60*60*1000);
-    bookingsWeekEl.textContent = leads.filter(l => new Date(l.createdAt).getTime() >= weekCut).length;
-    const services = {};
-    leads.forEach(l => { if(l.service) services[l.service] = (services[l.service]||0)+1; });
-    servicesCountEl.textContent = Object.keys(services).length;
-    pendingFollowupsEl.textContent = 0;
-    if(leads.length === 0){
-      leadsTbody.innerHTML = `<tr><td colspan="5" class="small-muted">No leads yet.</td></tr>`;
-    } else {
-      leadsTbody.innerHTML = '';
-      for(const ld of leads.slice().reverse()){
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(ld.name||'')}</td><td>${escapeHtml(ld.phone||'')}</td><td>${escapeHtml(ld.service||'')}</td><td>${escapeHtml(ld.preferred||'')}</td><td>${escapeHtml(ld.notes||'')}</td>`;
-        leadsTbody.appendChild(tr);
-      }
-    }
-    updateChartFromLeads(leads);
-    renderServiceBreakdown(services);
-  }
-  function escapeHtml(s){ return (''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  async function loadLeads(){
+  // Status checker
+  async function ping(){
     try{
-      const res = await fetch(API_BASE + '/api/leads-list');
-      if(!res.ok) throw new Error('no');
-      leads = await res.json();
-      renderLeadsTable();
-      showToast('Loaded', (leads.length||0)+' leads');
-    }catch(e){
-      showToast('Error', 'Could not load leads.');
-    }
+      const res=await fetch(API_BASE+'/api/ping');
+      if(res.ok){statusDot.style.background='#22c55e';statusText.textContent='Online';}
+      else throw 0;
+    }catch(e){statusDot.style.background='#dc2626';statusText.textContent='Offline';}
   }
+  ping();setInterval(ping,30000);
 
-  downloadJson.addEventListener('click', ()=>{
-    const data = JSON.stringify(leads, null, 2);
-    const blob = new Blob([data], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'leads.json'; document.body.appendChild(a);
-    a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
-
-  refreshBtn.addEventListener('click', ()=>{ loadLeads(); fetchSnapshots(); });
-
-  function renderServiceBreakdown(obj){
-    const el = document.getElementById('serviceBreakdown');
-    if(!obj || Object.keys(obj).length === 0){ el.textContent = 'No data'; return; }
-    el.innerHTML = '';
-    for(const [k,v] of Object.entries(obj)){
-      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='6px 0';
-      row.innerHTML = `<div style="font-weight:700">${escapeHtml(k)}</div><div style="color:var(--accent)">${v}</div>`;
-      el.appendChild(row);
-    }
-  }
-
-  // Snapshots (Settings panel)
-  async function fetchSnapshots(){
-    snapList.innerHTML = '<div class="small-muted">Loading snapshots...</div>';
-    try{
-      const res = await fetch(API_BASE + '/api/snapshots');
-      const arr = await res.json();
-      if(!arr.length){ snapList.innerHTML = '<div class="small-muted">No snapshots found.</div>'; return; }
-      snapList.innerHTML = '';
-      arr.forEach(s => {
-        const id = s.id || (s.title && s.title.toLowerCase().replace(/\s+/g,'_')) || ('snap_' + Math.floor(Math.random()*10000));
-        const row = document.createElement('div'); row.className='snapRow'; row.style.display='flex'; row.style.justifyContent='space-between';
-        row.innerHTML = `<div><strong>${escapeHtml(s.title||id)}</strong><div class="small-muted">${escapeHtml(s.desc||'')}</div></div><div><button class="btn small" data-id="${escapeHtml(id)}">Install</button></div>`;
-        snapList.appendChild(row);
-        row.querySelector('button').addEventListener('click', ()=>installSnapshot(id));
-      });
-    }catch(e){
-      snapList.innerHTML = '<div class="small-muted">Error loading snapshots.</div>';
-    }
-    loadInstalledSnapshots();
-  }
-
-  async function installSnapshot(snapshotId){
-    if(!confirm('Install snapshot "'+snapshotId+'"?')) return;
-    try{
-      const res = await fetch(API_BASE + '/api/install-snapshot', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({snapshotId})});
-      if(res.ok){
-        showToast('Installed', snapshotId);
-        await loadLeads();
-        loadInstalledSnapshots();
-      } else {
-        const txt = await res.text().catch(()=>null);
-        showToast('Fail', txt || 'install failed');
-      }
-    }catch(e){ showToast('Error','Network error'); }
-  }
-
-  async function loadInstalledSnapshots(){
-    try{
-      const res = await fetch(API_BASE + '/api/installed-snapshots');
-      const arr = await res.json();
-      if(!arr.length){ installedList.innerHTML = '<div class="small-muted">None installed yet.</div>'; return; }
-      installedList.innerHTML = '';
-      arr.forEach(s => {
-        const el = document.createElement('div'); el.className='snapRow'; el.style.display='flex'; el.style.justifyContent='space-between';
-        el.innerHTML = `<div><strong>${escapeHtml(s.title||s.id)}</strong><div class="small-muted">Installed ${new Date(s.installedAt||Date.now()).toLocaleString()}</div></div>`;
-        installedList.appendChild(el);
-      });
-    }catch(e){
-      installedList.innerHTML = '<div class="small-muted">Error fetching installed snapshots.</div>';
-    }
-  }
-
-  fetchSnapshotsBtn.addEventListener('click', fetchSnapshots);
-
-  /* Socket.io realtime */
-  let socket;
-  function startSocket(){
-    try{
-      socket = io(window.location.origin, { transports:['websocket','polling'] });
-      socket.on('connect', ()=>console.log('socket connected', socket.id));
-      socket.on('new_lead', (lead) => {
-        leads.push(lead);
-        renderLeadsTable();
-        if(notifOn) showToast('New lead', `${lead.name} • ${lead.phone}`);
-      });
-      socket.on('disconnect', ()=>console.log('socket disconnected'));
-    }catch(e){
-      console.warn('socket fail', e);
-    }
-  }
-
-  // Admin login
-  function showLogin(){ loginSection.style.display='block'; app.style.display='none'; }
-  function showApp(){ loginSection.style.display='none'; app.style.display='block'; }
-  async function tryAutoLogin(){
-    // No token implemented: must login or use demo
-    showLogin();
-  }
-
-  loginBtn.addEventListener('click', async () => {
-    const pw = adminPassword.value.trim();
-    if(!pw){ loginFeedback.textContent = 'Enter password.'; return; }
-    loginFeedback.textContent = 'Checking...';
-    try{
-      const res = await fetch(API_BASE + '/api/admin-login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})});
-      if(res.ok){
-        loginFeedback.textContent = '';
-        sessionStorage.setItem('tf_admin','1');
-        sessionStorage.setItem('tf_admin_pw', pw);
-        await initApp();
-        showApp();
-      } else {
-        loginFeedback.textContent = '❌ Wrong password.';
-      }
-    }catch(e){ loginFeedback.textContent = 'Network error.'; }
-  });
-
-  // Demo button (for quick local checks)
-  tryDemo.addEventListener('click', async () => {
-    sessionStorage.setItem('tf_admin','1');
-    await initApp();
-    showApp();
-  });
-
-  logoutBtn.addEventListener('click', ()=>{ sessionStorage.removeItem('tf_admin'); sessionStorage.removeItem('tf_admin_pw'); location.reload(); });
-
-  // initialization
-  async function initApp(){
-    loadSettingsFromStorage();
-    await loadLeads();
-    await fetchSnapshots();
-    startSocket();
-    setInterval(()=>serverTime.textContent = new Date().toLocaleString(), 1000);
-  }
-
-  // On load: try auto (session)
-  if(sessionStorage.getItem('tf_admin')){
-    (async ()=> {
-      const pw = sessionStorage.getItem('tf_admin_pw') || '';
-      try{
-        const res = await fetch(API_BASE + '/api/admin-login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})});
-        if(res.ok){ await initApp(); showApp(); } else { showLogin(); }
-      }catch(e){ showLogin(); }
-    })();
-  } else {
-    tryAutoLogin();
-  }
-
-  // helper: load settings initially
-  loadSettingsFromStorage();
-
-  // Expose small dev helpers in console (optional)
-  window._tf = { loadLeads, fetchSnapshots, installSnapshot, loadInstalledSnapshots };
-
-})(); // end IIFE
+  // Time updater
+  setInterval(()=>serverTime.textContent=new Date().toLocaleString(),1000);
+})();
 </script>
 </body>
 </html>
