@@ -5,131 +5,136 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>TaskFlow Admin — Dashboard</title>
 
-<!-- Chart.js CDN -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- Socket.io client (match backend socket.io version) -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <style>
   :root{
-    --bg:#f5f7fb; --card:#fff; --muted:#6b7280; --accent:#7c3aed; --accent-2:#6b21a8;
-    --glass: rgba(255,255,255,0.6);
+    --bg:#0d1620;       /* page background (dark) */
+    --sidebar:#0f2130;  /* sidebar */
+    --card:#0b1722;     /* card bg */
+    --muted:#9aa6b2;    /* muted text */
+    --accent:#7c3aed;   /* purple accent */
+    --accent-2:#6b21a8;
+    --glass: rgba(255,255,255,0.02);
+    --kpi-bg: rgba(255,255,255,0.01);
   }
-  [data-theme="dark"]{
-    --bg:#0f1724; --card:#111827; --muted:#9ca3af; --accent:#8b5cf6; --accent-2:#7c3aed; --glass: rgba(255,255,255,0.02);
+
+  /* Light theme overrides */
+  [data-theme="light"]{
+    --bg:#f5f7fb;
+    --sidebar:#ffffff;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --accent:#7c3aed;
+    --accent-2:#6b21a8;
+    --glass: rgba(0,0,0,0.03);
+    --kpi-bg: rgba(11,20,30,0.03);
   }
 
   *{box-sizing:border-box}
-  body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color: #0b1220;}
-  header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(0,0,0,0.06);background:linear-gradient(0deg,transparent,transparent)}
-  .wrap{display:flex;min-height:calc(100vh - 64px)}
+  html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;background:var(--bg);color:#ecf2f7}
+  .wrap{display:flex;min-height:100vh}
   /* Sidebar */
-  .sidebar{width:220px;background:linear-gradient(180deg, rgba(124,58,237,0.06), rgba(124,58,237,0.02));padding:24px;border-right:1px solid rgba(0,0,0,0.05);box-shadow: 0 6px 18px rgba(11,20,30,0.06)}
-  [data-theme="dark"] .sidebar{background:linear-gradient(180deg, rgba(124,58,237,0.04), rgba(0,0,0,0.02)); border-right:1px solid rgba(255,255,255,0.02)}
-  .brand{font-weight:800;color:var(--accent);margin-bottom:22px}
+  .sidebar{width:230px;background:var(--sidebar);padding:28px 18px;border-right:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:18px}
+  .brand{font-weight:800;color:var(--accent);font-size:18px;padding-bottom:6px}
   .nav{display:flex;flex-direction:column;gap:8px}
-  .nav button{background:transparent;border:0;color:var(--muted);padding:12px;border-radius:10px;text-align:left;cursor:pointer}
-  .nav button.active{background:linear-gradient(90deg, rgba(124,58,237,0.14), rgba(99,102,241,0.06));color:var(--accent);font-weight:700}
-  .sidebar .small{font-size:12px;color:var(--muted);margin-top:12px}
+  .nav button{background:transparent;border:0;color:var(--muted);padding:12px 10px;border-radius:10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:600}
+  .nav button.active{background:linear-gradient(90deg, rgba(124,58,237,0.06), rgba(99,102,241,0.02));color:var(--accent);box-shadow:0 6px 18px rgba(2,6,23,0.35)}
+  .sidebar .small{font-size:12px;color:var(--muted);margin-top:auto}
 
-  /* Main content */
-  .main{flex:1;padding:20px 28px}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  /* Main */
+  .main{flex:1;padding:22px 28px;overflow:auto}
+  header.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
   .controls{display:flex;gap:10px;align-items:center}
-  .btn{padding:8px 12px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
-  .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);color:var(--muted);font-weight:600}
-  [data-theme="dark"] .btn.ghost{border:1px solid rgba(255,255,255,0.04); color:var(--muted)}
+  .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);color:var(--muted);font-weight:600}
+  .btn.small{padding:6px 10px;font-size:13px}
 
+  /* KPI grid */
   .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.06)}
-  [data-theme="dark"] .card{box-shadow:0 6px 18px rgba(2,6,23,0.4)}
-  .kpi{font-size:13px;color:var(--muted); margin-bottom:8px}
+  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.5);min-height:86px}
+  .kpi{font-size:13px;color:var(--muted);margin-bottom:8px}
   .kpi .value{font-size:22px;color:var(--accent);font-weight:800}
 
+  /* grid body */
   .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}
-  .chartCard{height:360px}
-  canvas{background:transparent;border-radius:8px}
+  .chartCard{height:380px}
+  canvas{width:100%!important;height:100%!important}
 
-  /* Leads list */
-  .leads{background:var(--card);padding:12px;border-radius:12px;max-height:420px;overflow:auto}
+  /* Leads */
+  .leads{background:var(--card);padding:12px;border-radius:12px;max-height:480px;overflow:auto}
   table{width:100%;border-collapse:collapse}
-  th,td{padding:8px;text-align:left;font-size:13px;border-bottom:1px solid rgba(0,0,0,0.04);color:var(--muted)}
-  [data-theme="dark"] th, [data-theme="dark"] td{border-bottom:1px solid rgba(255,255,255,0.02)}
-  th{font-weight:700;color:var(--muted)}
+  th,td{padding:10px;text-align:left;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.02)}
+  th{font-weight:700}
+  .small-muted{font-size:13px;color:var(--muted)}
 
-  /* Snapshots area */
-  .snapshots{margin-top:12px;display:flex;flex-direction:column;gap:10px}
-  .snapRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(0,0,0,0.01), rgba(0,0,0,0.02))}
-  [data-theme="dark"] .snapRow{background:rgba(255,255,255,0.01)}
+  /* Snapshots area (in Settings only; not main UI) */
+  .snapshots{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 
-  /* Notification */
-  .notif{position:fixed;right:22px;bottom:22px;z-index:999;font-family:Inter}
-  .toast{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:12px 14px;border-radius:10px;box-shadow:0 8px 30px rgba(11,20,30,0.3);display:flex;gap:12px;align-items:center;margin-top:8px;transform:translateY(8px);opacity:0;transition:all .35s}
+  /* Toast notifications */
+  .notif{position:fixed;right:20px;bottom:20px;z-index:9999}
+  .toast{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#fff;padding:12px 14px;border-radius:10px;box-shadow:0 8px 30px rgba(2,6,23,0.5);display:flex;gap:12px;align-items:center;margin-top:8px;opacity:0;transform:translateY(12px);transition:all .35s}
   .toast.show{opacity:1;transform:none}
 
-  /* login */
-  #loginSection{max-width:420px;margin:60px auto;background:var(--card);padding:22px;border-radius:12px;box-shadow:0 12px 30px rgba(2,6,23,0.06)}
-  label{display:block;margin:8px 0 4px;color:var(--muted);font-size:13px}
-  input[type="password"], input[type="text"], select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);margin-bottom:8px}
-  [data-theme="dark"] input{border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.02);color:#fff}
+  /* Login */
+  #loginSection{max-width:520px;margin:70px auto;background:var(--card);padding:24px;border-radius:12px;box-shadow:0 12px 30px rgba(2,6,23,0.5)}
+  label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
+  input[type="password"], input[type="text"], select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);margin-bottom:8px;background:transparent;color:inherit}
+  [data-theme="light"] input{border:1px solid rgba(0,0,0,0.07);background:#fff;color:#111}
 
-  .top-right {display:flex;gap:10px;align-items:center}
-  .toggle{cursor:pointer;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
-  [data-theme="dark"] .toggle{border:1px solid rgba(255,255,255,0.04)}
-  .small-muted{font-size:13px;color:var(--muted)}
-  @media (max-width:900px){.sidebar{display:none}.wrap{flex-direction:column}.metrics{grid-template-columns:repeat(2,1fr)}}
+  /* Settings layout */
+  .settingsGrid{display:grid;grid-template-columns:1fr 340px;gap:14px;margin-top:12px}
+  .panel{background:var(--card);padding:14px;border-radius:10px}
+
+  /* small responsive */
+  @media (max-width:1000px){ .sidebar{display:none} .grid{grid-template-columns:1fr} .metrics{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="loginSection" style="display:none;">
-  <h2 style="margin:0 0 8px">Admin Login</h2>
-  <label>Password</label>
+<!-- Login Section -->
+<div id="loginSection">
+  <h2 style="margin:0 0 8px;color:var(--muted)">Admin Login</h2>
+  <label>Admin Password</label>
   <input id="adminPassword" type="password" placeholder="Enter admin password" />
-  <button id="loginBtn" class="btn" style="width:100%">Login</button>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button id="loginBtn" class="btn">Login</button>
+    <button id="tryDemo" class="btn small ghost">Try Demo (no password)</button>
+  </div>
   <p id="loginFeedback" class="small-muted" style="margin-top:8px"></p>
 </div>
 
-<!-- MAIN APP -->
-<div id="app" style="display:none" data-theme="light">
-  <header>
-    <div style="display:flex;gap:20px;align-items:center">
-      <div style="font-weight:800;color:var(--accent)">TaskFlow Admin</div>
-      <div class="small-muted">Dashboard Overview</div>
-    </div>
-    <div class="top-right">
-      <div class="small-muted" id="serverTime"></div>
-      <button id="themeToggle" class="toggle">🌙</button>
-      <button id="soundToggle" class="toggle">🔔 On</button>
-      <button id="logoutBtn" class="toggle">Logout</button>
-    </div>
-  </header>
-
+<!-- Main App -->
+<div id="app" style="display:none" data-theme="dark">
   <div class="wrap">
     <aside class="sidebar">
       <div class="brand">TaskFlow</div>
-      <div class="nav">
+      <nav class="nav" role="navigation" aria-label="Main">
         <button class="active" data-tab="dashboard">📈 Dashboard</button>
         <button data-tab="leads">📋 Leads</button>
-        <button data-tab="snapshots">🧩 Snapshots</button>
-      </div>
-      <div class="small">Logged in as Admin</div>
+        <button data-tab="settings">⚙️ Settings</button>
+      </nav>
+      <div class="small" style="margin-top:auto">Logged in as Admin</div>
     </aside>
 
     <main class="main">
-      <!-- Dashboard Tab -->
-      <section id="tab-dashboard">
-        <div class="topbar">
-          <div>
-            <h2 style="margin:0">Dashboard Overview</h2>
-            <div class="small-muted">Real-time metrics and charts</div>
-          </div>
-          <div class="controls">
-            <button id="refreshBtn" class="btn ghost">Refresh</button>
-          </div>
+      <header class="topbar">
+        <div>
+          <div style="font-weight:800;color:var(--accent)">Dashboard Overview</div>
+          <div class="small-muted" id="headerSub">Real-time metrics</div>
         </div>
+        <div class="controls">
+          <div id="serverTime" class="small-muted" style="min-width:160px;text-align:right"></div>
+          <button id="themeToggle" class="btn small ghost" title="Toggle theme">☾</button>
+          <button id="logoutBtn" class="btn small ghost" title="Logout">Logout</button>
+        </div>
+      </header>
 
+      <!-- Dashboard -->
+      <section id="tab-dashboard">
         <div class="metrics">
           <div class="card">
             <div class="kpi">Total Leads</div>
@@ -156,24 +161,25 @@
           </div>
           <div class="card">
             <h3 style="margin:0 0 12px">Service Breakdown</h3>
-            <div id="serviceBreakdown" style="height:320px;display:flex;align-items:center;justify-content:center;color:var(--muted)">No data yet</div>
+            <div id="serviceBreakdown" style="min-height:260px;color:var(--muted);display:flex;align-items:center;justify-content:center">No data</div>
           </div>
         </div>
       </section>
 
-      <!-- Leads Tab -->
+      <!-- Leads -->
       <section id="tab-leads" style="display:none">
-        <div class="topbar">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div>
-            <h2 style="margin:0">Leads</h2>
+            <h3 style="margin:0">Leads</h3>
             <div class="small-muted">Recent leads and details</div>
           </div>
-          <div class="controls">
-            <button id="downloadJson" class="btn ghost">Download JSON</button>
+          <div style="display:flex;gap:8px">
+            <button id="downloadJson" class="btn small ghost">Download JSON</button>
+            <button id="refreshBtn" class="btn small">Refresh</button>
           </div>
         </div>
 
-        <div class="card leads">
+        <div class="leads card">
           <table>
             <thead><tr><th>Name</th><th>Phone</th><th>Service</th><th>When</th><th>Notes</th></tr></thead>
             <tbody id="leadsTbody"><tr><td colspan="5" class="small-muted">No leads yet.</td></tr></tbody>
@@ -181,66 +187,80 @@
         </div>
       </section>
 
-      <!-- Snapshots Tab -->
-      <section id="tab-snapshots" style="display:none">
-        <div class="topbar">
-          <div>
-            <h2 style="margin:0">Snapshots</h2>
-            <div class="small-muted">Install prebuilt templates (e.g., Cleaning Pro)</div>
-          </div>
-          <div class="controls">
-            <button id="fetchSnapshots" class="btn ghost">Refresh</button>
-          </div>
-        </div>
+      <!-- Settings -->
+      <section id="tab-settings" style="display:none">
+        <h3 style="margin:0 0 8px">Settings</h3>
+        <div class="settingsGrid">
+          <div class="panel">
+            <h4 style="margin-top:0">Profile & Preferences</h4>
+            <label>Profile name</label>
+            <input id="profileName" placeholder="Admin" />
+            <label>Role</label>
+            <input id="profileRole" placeholder="Owner" />
+            <label>Email</label>
+            <input id="profileEmail" placeholder="you@domain.com" />
 
-        <div class="card">
-          <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-            <strong>Available</strong>
-            <div class="small-muted">Install templates into your app</div>
-          </div>
-          <div id="snapList" class="snapshots"><div class="small-muted">Loading snapshots...</div></div>
+            <h4 style="margin-top:12px">Appearance & Notifications</h4>
+            <div style="display:flex;gap:8px;align-items:center">
+              <label style="min-width:140px">Theme</label>
+              <select id="themeSelect" style="padding:8px;border-radius:8px">
+                <option value="dark">Dark (default)</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
 
-          <hr style="margin:12px 0;border:none;border-top:1px solid rgba(0,0,0,0.04)">
-          <div style="margin-top:8px">
-            <strong>Installed Snapshots</strong>
-            <div id="installedList" class="snapshots" style="margin-top:8px"><div class="small-muted">None installed yet.</div></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <label style="min-width:140px">Notifications</label>
+              <button id="notifToggle" class="btn small ghost">🔔 On</button>
+            </div>
+
+            <div style="margin-top:16px;display:flex;gap:8px">
+              <button id="saveSettings" class="btn">Save Settings</button>
+              <button id="resetSettings" class="btn small ghost">Reset</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h4 style="margin-top:0">Technical</h4>
+            <div class="small-muted" style="margin-bottom:8px">Server & snapshots (kept here so general UI stays clean)</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <button id="fetchSnapshots" class="btn small ghost">Refresh Snapshots</button>
+              <button id="viewInstalled" class="btn small ghost">Installed</button>
+            </div>
+
+            <h5 style="margin-top:12px">Available snapshots</h5>
+            <div id="snapList" class="snapshots"><div class="small-muted">No snapshots loaded.</div></div>
+
+            <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+
+            <h5>Installed</h5>
+            <div id="installedList" class="snapshots"><div class="small-muted">No installed snapshots.</div></div>
           </div>
         </div>
       </section>
     </main>
   </div>
 
-  <!-- Notification area -->
+  <!-- toasts -->
   <div class="notif" id="notifArea"></div>
-
 </div>
 
 <script>
+/* ========= Admin UI script ========= */
 (() => {
-  const API_BASE = window.location.origin; // same origin (Render)
-  // Elements
+  const API_BASE = window.location.origin; // same origin
+  // UI references
   const loginSection = document.getElementById('loginSection');
   const app = document.getElementById('app');
   const loginBtn = document.getElementById('loginBtn');
+  const tryDemo = document.getElementById('tryDemo');
   const adminPassword = document.getElementById('adminPassword');
   const loginFeedback = document.getElementById('loginFeedback');
   const logoutBtn = document.getElementById('logoutBtn');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const totalLeadsEl = document.getElementById('totalLeads');
-  const bookingsWeekEl = document.getElementById('bookingsWeek');
-  const servicesCountEl = document.getElementById('servicesCount');
-  const pendingFollowupsEl = document.getElementById('pendingFollowups');
-  const leadsTbody = document.getElementById('leadsTbody');
-  const serverTime = document.getElementById('serverTime');
-  const downloadJson = document.getElementById('downloadJson');
-  const fetchSnapshotsBtn = document.getElementById('fetchSnapshots');
-  const snapList = document.getElementById('snapList');
-  const installedList = document.getElementById('installedList');
-  const notifArea = document.getElementById('notifArea');
   const themeToggle = document.getElementById('themeToggle');
-  const soundToggle = document.getElementById('soundToggle');
+  const serverTime = document.getElementById('serverTime');
 
-  // Tabs
+  // tabs
   document.querySelectorAll('.nav button').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
@@ -250,94 +270,119 @@
     });
   });
 
-  // Theme handling (default light)
-  const root = app;
-  function applyTheme(t){
-    root.setAttribute('data-theme', t);
-    localStorage.setItem('tf_theme', t);
-    themeToggle.textContent = t === 'dark' ? '☀️' : '🌙';
-  }
-  themeToggle.addEventListener('click', () => {
-    const cur = root.getAttribute('data-theme') || 'light';
-    applyTheme(cur === 'light' ? 'dark' : 'light');
-  });
-  const storedTheme = localStorage.getItem('tf_theme') || 'light';
-  applyTheme(storedTheme);
+  /* Settings elements */
+  const themeSelect = document.getElementById('themeSelect');
+  const notifToggle = document.getElementById('notifToggle');
+  const saveSettings = document.getElementById('saveSettings');
+  const resetSettings = document.getElementById('resetSettings');
+  const profileName = document.getElementById('profileName');
+  const profileRole = document.getElementById('profileRole');
+  const profileEmail = document.getElementById('profileEmail');
 
-  // Sound toggle
-  let soundOn = true;
-  soundToggle.addEventListener('click', () => {
-    soundOn = !soundOn;
-    soundToggle.textContent = soundOn ? '🔔 On' : '🔕 Off';
-  });
+  /* Dashboard elements */
+  const totalLeadsEl = document.getElementById('totalLeads');
+  const bookingsWeekEl = document.getElementById('bookingsWeek');
+  const servicesCountEl = document.getElementById('servicesCount');
+  const pendingFollowupsEl = document.getElementById('pendingFollowups');
+  const leadsTbody = document.getElementById('leadsTbody');
+  const downloadJson = document.getElementById('downloadJson');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const fetchSnapshotsBtn = document.getElementById('fetchSnapshots');
+  const snapList = document.getElementById('snapList');
+  const installedList = document.getElementById('installedList');
 
-  // small helper: show toast
+  const notifArea = document.getElementById('notifArea');
+
+  // small utils
   function showToast(title, text){
     const el = document.createElement('div');
     el.className = 'toast';
     el.innerHTML = `<div style="font-weight:700">${title}</div><div style="opacity:0.95;margin-left:8px">${text}</div>`;
     notifArea.prepend(el);
-    // show
-    setTimeout(()=>el.classList.add('show'), 30);
-    // click to dismiss
+    requestAnimationFrame(()=>el.classList.add('show'));
     el.addEventListener('click', ()=>el.remove());
-    // auto remove
-    setTimeout(()=>el.classList.remove('show'), 7000);
-    setTimeout(()=>el.remove(), 7600);
-    if(soundOn){ const audio = new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA...'); /* empty placeholder - no big file */ }
+    setTimeout(()=>el.classList.remove('show'),7000);
+    setTimeout(()=>el.remove(),7600);
   }
 
-  // login / auth
-  function showLogin(){ loginSection.style.display='block'; app.style.display='none'; }
-  function showApp(){ loginSection.style.display='none'; app.style.display='block'; }
+  // Theme handling (persist)
+  function applyTheme(t){
+    app.setAttribute('data-theme', t);
+    localStorage.setItem('tf_theme', t);
+    themeSelect.value = t;
+    themeToggle.textContent = t === 'dark' ? '☾' : '☀️';
+  }
+  themeSelect.addEventListener('change', ()=>applyTheme(themeSelect.value));
+  themeToggle.addEventListener('click', ()=>{
+    const cur = app.getAttribute('data-theme') || 'dark';
+    applyTheme(cur === 'dark' ? 'light' : 'dark');
+  });
 
-  async function tryAutoLogin(){
-    // no token system implemented; show login by default
-    showLogin();
+  // Notification toggle
+  let notifOn = true;
+  function updateNotifBtn(){ notifToggle.textContent = notifOn ? '🔔 On' : '🔕 Off'; }
+  notifToggle.addEventListener('click', ()=>{ notifOn = !notifOn; localStorage.setItem('tf_notif', notifOn ? '1':'0'); updateNotifBtn(); });
+
+  // Save / Reset settings
+  function loadSettingsFromStorage(){
+    const t = localStorage.getItem('tf_theme') || 'dark';
+    applyTheme(t);
+    notifOn = !!localStorage.getItem('tf_notif') || true;
+    updateNotifBtn();
+    profileName.value = localStorage.getItem('tf_profile_name') || 'Admin';
+    profileRole.value = localStorage.getItem('tf_profile_role') || 'Owner';
+    profileEmail.value = localStorage.getItem('tf_profile_email') || '';
+  }
+  saveSettings.addEventListener('click', ()=>{
+    localStorage.setItem('tf_profile_name', profileName.value || '');
+    localStorage.setItem('tf_profile_role', profileRole.value || '');
+    localStorage.setItem('tf_profile_email', profileEmail.value || '');
+    localStorage.setItem('tf_theme', themeSelect.value);
+    localStorage.setItem('tf_notif', notifOn ? '1':'0');
+    applyTheme(themeSelect.value);
+    showToast('Saved', 'Settings saved locally');
+  });
+  resetSettings.addEventListener('click', ()=>{
+    localStorage.removeItem('tf_profile_name');
+    localStorage.removeItem('tf_profile_role');
+    localStorage.removeItem('tf_profile_email');
+    localStorage.removeItem('tf_notif');
+    localStorage.removeItem('tf_theme');
+    loadSettingsFromStorage();
+    showToast('Reset', 'Settings cleared');
+  });
+
+  // Chart
+  const ctx = document.getElementById('leadsChart').getContext('2d');
+  const leadsChart = new Chart(ctx, {
+    type:'line',
+    data:{labels:[], datasets:[{label:'Leads', data:[], fill:true, borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,0.08)', tension:0.35}]},
+    options:{animation:{duration:600}, scales:{y:{beginAtZero:true}}}
+  });
+
+  function updateChartFromLeads(leads){
+    const buckets = {};
+    leads.forEach(l => {
+      const d = new Date(l.createdAt||Date.now());
+      const key = d.toISOString().slice(0,10);
+      buckets[key] = (buckets[key]||0)+1;
+    });
+    const labels = Object.keys(buckets).sort();
+    leadsChart.data.labels = labels;
+    leadsChart.data.datasets[0].data = labels.map(k=>buckets[k]);
+    leadsChart.update();
   }
 
-  loginBtn.addEventListener('click', async () => {
-    const pw = adminPassword.value.trim();
-    if(!pw){ loginFeedback.textContent = 'Enter password.'; return; }
-    loginFeedback.textContent = 'Checking...';
-    try{
-      const res = await fetch(API_BASE + '/api/admin-login', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password: pw})
-      });
-      if(res.ok){
-        loginFeedback.textContent = '';
-        // store placeholder flag in sessionStorage
-        sessionStorage.setItem('tf_admin', '1');
-        sessionStorage.setItem('tf_admin_pw', pw);
-        initApp();
-        showApp();
-      } else {
-        loginFeedback.textContent = '❌ Wrong password.';
-      }
-    }catch(e){
-      loginFeedback.textContent = 'Network error.';
-    }
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    sessionStorage.removeItem('tf_admin');
-    sessionStorage.removeItem('tf_admin_pw');
-    location.reload();
-  });
-
-  // fetch leads and update UI
+  // Leads data and UI
   let leads = [];
-  function updateMetricsAndTable(){
+  function renderLeadsTable(){
     totalLeadsEl.textContent = leads.length || 0;
-    // bookings this week (simple: count leads with createdAt within 7 days)
     const weekCut = Date.now() - (7*24*60*60*1000);
     bookingsWeekEl.textContent = leads.filter(l => new Date(l.createdAt).getTime() >= weekCut).length;
-    // services count (unique services)
     const services = {};
-    leads.forEach(l => { if(l.service) services[l.service] = (services[l.service]||0)+1 });
+    leads.forEach(l => { if(l.service) services[l.service] = (services[l.service]||0)+1; });
     servicesCountEl.textContent = Object.keys(services).length;
-    pendingFollowupsEl.textContent = 0; // placeholder (could derive from lead state)
-    // table
+    pendingFollowupsEl.textContent = 0;
     if(leads.length === 0){
       leadsTbody.innerHTML = `<tr><td colspan="5" class="small-muted">No leads yet.</td></tr>`;
     } else {
@@ -348,41 +393,59 @@
         leadsTbody.appendChild(tr);
       }
     }
-    // update chart
-    updateChart();
-    // service breakdown
+    updateChartFromLeads(leads);
     renderServiceBreakdown(services);
   }
+  function escapeHtml(s){ return (''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  // fetch leads from backend
   async function loadLeads(){
     try{
       const res = await fetch(API_BASE + '/api/leads-list');
-      if(!res.ok) throw 0;
+      if(!res.ok) throw new Error('no');
       leads = await res.json();
-      updateMetricsAndTable();
-      showToast('Leads loaded', (leads.length||0) + ' leads');
+      renderLeadsTable();
+      showToast('Loaded', (leads.length||0)+' leads');
     }catch(e){
       showToast('Error', 'Could not load leads.');
     }
   }
 
-  // snapshots
+  downloadJson.addEventListener('click', ()=>{
+    const data = JSON.stringify(leads, null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'leads.json'; document.body.appendChild(a);
+    a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  refreshBtn.addEventListener('click', ()=>{ loadLeads(); fetchSnapshots(); });
+
+  function renderServiceBreakdown(obj){
+    const el = document.getElementById('serviceBreakdown');
+    if(!obj || Object.keys(obj).length === 0){ el.textContent = 'No data'; return; }
+    el.innerHTML = '';
+    for(const [k,v] of Object.entries(obj)){
+      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='6px 0';
+      row.innerHTML = `<div style="font-weight:700">${escapeHtml(k)}</div><div style="color:var(--accent)">${v}</div>`;
+      el.appendChild(row);
+    }
+  }
+
+  // Snapshots (Settings panel)
   async function fetchSnapshots(){
     snapList.innerHTML = '<div class="small-muted">Loading snapshots...</div>';
     try{
       const res = await fetch(API_BASE + '/api/snapshots');
       const arr = await res.json();
-      if(!arr || !arr.length){ snapList.innerHTML = '<div class="small-muted">No snapshots found.</div>'; return; }
+      if(!arr.length){ snapList.innerHTML = '<div class="small-muted">No snapshots found.</div>'; return; }
       snapList.innerHTML = '';
-      for(const s of arr){
+      arr.forEach(s => {
         const id = s.id || (s.title && s.title.toLowerCase().replace(/\s+/g,'_')) || ('snap_' + Math.floor(Math.random()*10000));
-        const row = document.createElement('div'); row.className='snapRow';
-        row.innerHTML = `<div><strong>${escapeHtml(s.title||id)}</strong><div class="small-muted">${escapeHtml(s.desc||'')}</div></div>
-                         <div style="display:flex;gap:8px"><button class="btn" data-id="${escapeHtml(id)}">Install</button></div>`;
+        const row = document.createElement('div'); row.className='snapRow'; row.style.display='flex'; row.style.justifyContent='space-between';
+        row.innerHTML = `<div><strong>${escapeHtml(s.title||id)}</strong><div class="small-muted">${escapeHtml(s.desc||'')}</div></div><div><button class="btn small" data-id="${escapeHtml(id)}">Install</button></div>`;
         snapList.appendChild(row);
         row.querySelector('button').addEventListener('click', ()=>installSnapshot(id));
-      }
+      });
     }catch(e){
       snapList.innerHTML = '<div class="small-muted">Error loading snapshots.</div>';
     }
@@ -390,135 +453,117 @@
   }
 
   async function installSnapshot(snapshotId){
-    if(!confirm('Install snapshot "'+snapshotId+'"? This will add demo content.')) return;
+    if(!confirm('Install snapshot "'+snapshotId+'"?')) return;
     try{
-      const res = await fetch(API_BASE + '/api/install-snapshot', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({snapshotId})
-      });
+      const res = await fetch(API_BASE + '/api/install-snapshot', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({snapshotId})});
       if(res.ok){
-        showToast('Snapshot installed', snapshotId);
-        await loadLeads(); // refresh leads if sample leads were added
+        showToast('Installed', snapshotId);
+        await loadLeads();
         loadInstalledSnapshots();
       } else {
-        const t = await res.text().catch(()=>null);
-        showToast('Failed', t || 'install failed');
+        const txt = await res.text().catch(()=>null);
+        showToast('Fail', txt || 'install failed');
       }
-    }catch(e){
-      showToast('Error','Network error');
-    }
+    }catch(e){ showToast('Error','Network error'); }
   }
 
   async function loadInstalledSnapshots(){
     try{
       const res = await fetch(API_BASE + '/api/installed-snapshots');
       const arr = await res.json();
-      if(!arr || !arr.length){ installedList.innerHTML = '<div class="small-muted">None installed yet.</div>'; return; }
+      if(!arr.length){ installedList.innerHTML = '<div class="small-muted">None installed yet.</div>'; return; }
       installedList.innerHTML = '';
-      for(const s of arr){
-        const el = document.createElement('div'); el.className='snapRow';
-        el.innerHTML = `<div><strong>${escapeHtml(s.title||s.id)}</strong><div class="small-muted">Installed at ${new Date(s.installedAt||Date.now()).toLocaleString()}</div></div>`;
+      arr.forEach(s => {
+        const el = document.createElement('div'); el.className='snapRow'; el.style.display='flex'; el.style.justifyContent='space-between';
+        el.innerHTML = `<div><strong>${escapeHtml(s.title||s.id)}</strong><div class="small-muted">Installed ${new Date(s.installedAt||Date.now()).toLocaleString()}</div></div>`;
         installedList.appendChild(el);
-      }
+      });
     }catch(e){
       installedList.innerHTML = '<div class="small-muted">Error fetching installed snapshots.</div>';
     }
   }
 
-  // Download JSON
-  downloadJson.addEventListener('click', async () => {
-    const data = JSON.stringify(leads, null, 2);
-    const blob = new Blob([data], {type:'application/json'});
-    const u = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=u; a.download = 'leads.json'; document.body.appendChild(a);
-    a.click(); a.remove(); URL.revokeObjectURL(u);
-  });
+  fetchSnapshotsBtn.addEventListener('click', fetchSnapshots);
 
-  // helper escape
-  function escapeHtml(s){ return (''+s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  // Charts
-  const ctx = document.getElementById('leadsChart').getContext('2d');
-  let leadsChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: [], datasets: [{ label:'Leads', data: [], fill:true, tension:0.4, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#7c3aed', backgroundColor: 'rgba(124,58,237,0.08)'}] },
-    options: { animation: { duration: 700 }, scales:{ y:{ beginAtZero:true } } }
-  });
-  function updateChart(){
-    // simple counts per day
-    const buckets = {};
-    leads.forEach(l => {
-      const d = new Date(l.createdAt||Date.now());
-      const key = d.toISOString().slice(0,10);
-      buckets[key] = (buckets[key]||0)+1;
-    });
-    const labels = Object.keys(buckets).sort();
-    const data = labels.map(k=>buckets[k]);
-    leadsChart.data.labels = labels;
-    leadsChart.data.datasets[0].data = data;
-    leadsChart.update();
-  }
-
-  function renderServiceBreakdown(obj){
-    if(!obj || Object.keys(obj).length===0){ document.getElementById('serviceBreakdown').textContent='No data yet'; return; }
-    const root = document.getElementById('serviceBreakdown');
-    root.innerHTML = '';
-    for(const [k,v] of Object.entries(obj)){
-      const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='6px 0';
-      row.innerHTML = `<div style="font-weight:600">${escapeHtml(k)}</div><div style="color:var(--accent)">${v}</div>`;
-      root.appendChild(row);
-    }
-  }
-
-  // Socket.io realtime
+  /* Socket.io realtime */
   let socket;
   function startSocket(){
     try{
       socket = io(window.location.origin, { transports:['websocket','polling'] });
-      socket.on('connect', ()=>{ console.log('socket connected', socket.id); });
+      socket.on('connect', ()=>console.log('socket connected', socket.id));
       socket.on('new_lead', (lead) => {
-        // add to leads and update UI
         leads.push(lead);
-        updateMetricsAndTable();
-        showToast('New lead', `${lead.name} • ${lead.phone}`);
+        renderLeadsTable();
+        if(notifOn) showToast('New lead', `${lead.name} • ${lead.phone}`);
       });
       socket.on('disconnect', ()=>console.log('socket disconnected'));
-    }catch(e){ console.warn('socket fail', e); }
+    }catch(e){
+      console.warn('socket fail', e);
+    }
   }
 
-  // init app after login
-  async function initApp(){
-    await loadLeads();
-    await fetchSnapshots();
-    startSocket();
-    // update server time shown
-    setInterval(()=>serverTime.textContent = new Date().toLocaleString(), 1000);
-  }
-
-  // UI event hooks
-  refreshBtn.addEventListener('click', () => { loadLeads(); fetchSnapshots(); });
-  fetchSnapshotsBtn.addEventListener('click', fetchSnapshots);
-
-  // On load: check session
-  if(sessionStorage.getItem('tf_admin')){ // attempt to use stored pw for admin-login check
-    // quick check
-    (async ()=>{
-      try{
-        const pw = sessionStorage.getItem('tf_admin_pw') || '';
-        const res = await fetch(API_BASE + '/api/admin-login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})});
-        if(res.ok){ initApp(); showApp(); } else { showLogin(); }
-      }catch(e){ showLogin(); }
-    })();
-  } else {
+  // Admin login
+  function showLogin(){ loginSection.style.display='block'; app.style.display='none'; }
+  function showApp(){ loginSection.style.display='none'; app.style.display='block'; }
+  async function tryAutoLogin(){
+    // No token implemented: must login or use demo
     showLogin();
   }
 
-  // small util: initial fetch of server ping to verify
-  (async ()=> {
+  loginBtn.addEventListener('click', async () => {
+    const pw = adminPassword.value.trim();
+    if(!pw){ loginFeedback.textContent = 'Enter password.'; return; }
+    loginFeedback.textContent = 'Checking...';
     try{
-      const res = await fetch(API_BASE + '/api/ping');
-      if(res.ok) console.log('backend ping ok');
-    }catch(e){ console.warn('backend not reachable'); }
-  })();
+      const res = await fetch(API_BASE + '/api/admin-login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})});
+      if(res.ok){
+        loginFeedback.textContent = '';
+        sessionStorage.setItem('tf_admin','1');
+        sessionStorage.setItem('tf_admin_pw', pw);
+        await initApp();
+        showApp();
+      } else {
+        loginFeedback.textContent = '❌ Wrong password.';
+      }
+    }catch(e){ loginFeedback.textContent = 'Network error.'; }
+  });
+
+  // Demo button (for quick local checks)
+  tryDemo.addEventListener('click', async () => {
+    sessionStorage.setItem('tf_admin','1');
+    await initApp();
+    showApp();
+  });
+
+  logoutBtn.addEventListener('click', ()=>{ sessionStorage.removeItem('tf_admin'); sessionStorage.removeItem('tf_admin_pw'); location.reload(); });
+
+  // initialization
+  async function initApp(){
+    loadSettingsFromStorage();
+    await loadLeads();
+    await fetchSnapshots();
+    startSocket();
+    setInterval(()=>serverTime.textContent = new Date().toLocaleString(), 1000);
+  }
+
+  // On load: try auto (session)
+  if(sessionStorage.getItem('tf_admin')){
+    (async ()=> {
+      const pw = sessionStorage.getItem('tf_admin_pw') || '';
+      try{
+        const res = await fetch(API_BASE + '/api/admin-login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})});
+        if(res.ok){ await initApp(); showApp(); } else { showLogin(); }
+      }catch(e){ showLogin(); }
+    })();
+  } else {
+    tryAutoLogin();
+  }
+
+  // helper: load settings initially
+  loadSettingsFromStorage();
+
+  // Expose small dev helpers in console (optional)
+  window._tf = { loadLeads, fetchSnapshots, installSnapshot, loadInstalledSnapshots };
 
 })(); // end IIFE
 </script>
